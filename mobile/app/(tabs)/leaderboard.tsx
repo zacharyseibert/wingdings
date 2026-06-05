@@ -24,6 +24,7 @@ interface RecentEntry {
   amount: number;
   created_at: string;
   photo_url?: string | null;
+  location_name?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -116,6 +117,9 @@ function Header({ globalStats, funStats, recent }: { globalStats: GlobalStats | 
                       </Text>
                       <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
                     </View>
+                    {e.location_name && (
+                      <Text style={{ color: '#78716c', fontSize: 11, marginTop: 2 }}>📍 {e.location_name}</Text>
+                    )}
                     {e.photo_url && (
                       <Image
                         source={{ uri: e.photo_url }}

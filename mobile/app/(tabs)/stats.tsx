@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
@@ -66,8 +66,22 @@ export default function StatsScreen() {
         ) : (
           history.map((e, i) => (
             <View key={i} style={styles.row}>
-              <Text style={styles.rowAmount}>+{e.amount} wings</Text>
-              <Text style={styles.rowTime}>{timeAgo(e.created_at)}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={styles.rowAmount}>+{e.amount} wings</Text>
+                  <Text style={styles.rowTime}>{timeAgo(e.created_at)}</Text>
+                </View>
+                {e.location_name && (
+                  <Text style={styles.rowLocation}>📍 {e.location_name}</Text>
+                )}
+                {e.photo_url && (
+                  <Image
+                    source={{ uri: e.photo_url }}
+                    style={{ width: '100%', height: 140, borderRadius: 10, marginTop: 8 }}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
             </View>
           ))
         )}
@@ -103,4 +117,5 @@ const styles = StyleSheet.create({
   },
   rowAmount: { color: '#E8722A', fontSize: 17, fontWeight: '600' },
   rowTime: { color: '#78716c', fontSize: 14 },
+  rowLocation: { color: '#78716c', fontSize: 12, marginTop: 2 },
 });

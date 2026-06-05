@@ -8,6 +8,7 @@ interface Entry {
   created_at: string;
   user_id: string;
   photo_url?: string | null;
+  location_name?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -97,6 +98,9 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
                 <span className="text-stone-400"> ate </span>
                 <span className="text-wing-orange font-bold">{e.amount} wings</span>
                 <span className="text-stone-500 text-xs ml-2">{timeAgo(e.created_at)}</span>
+                {e.location_name && (
+                  <span className="text-stone-500 text-xs ml-2">📍 {e.location_name}</span>
+                )}
               </div>
               {e.photo_url && (
                 <img

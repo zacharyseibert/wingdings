@@ -51,7 +51,7 @@ export async function upsertUser({ id, username, display_name, avatar_url, email
  * Add (or subtract, if amount is negative) wings for a user.
  * Ensures the total never goes below 0.
  */
-export async function addWings(userId, amount, note = null, photoUrl = null) {
+export async function addWings(userId, amount, note = null, photoUrl = null, locationName = null) {
   // Guard: fetch current total to prevent going negative
   const user = await getUser(userId);
   if (user && user.total_wings + amount < 0) {
@@ -60,7 +60,13 @@ export async function addWings(userId, amount, note = null, photoUrl = null) {
 
   const { error } = await supabase
     .from('wing_entries')
-    .insert({ user_id: userId, amount, note, ...(photoUrl ? { photo_url: photoUrl } : {}) });
+    .insert({
+      user_id: userId,
+      amount,
+      note,
+      ...(photoUrl ? { photo_url: photoUrl } : {}),
+      ...(locationName ? { location_name: locationName } : {}),
+    });
   if (error) throw error;
 }
 
@@ -185,7 +191,7 @@ export async function getLongestStreak() {
 export async function getRecentActivity(limit = 8) {
   const { data, error } = await supabase
     .from('wing_entries')
-    .select('amount, created_at, user_id, photo_url, users(display_name, username, avatar_url)')
+    .select('amount, created_at, user_id, photo_url, location_name, users(display_name, username, avatar_url)')
     .gt('amount', 0)
     .order('created_at', { ascending: false })
     .limit(limit);

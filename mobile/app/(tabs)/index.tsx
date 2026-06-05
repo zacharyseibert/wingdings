@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 
 const PRESETS = [1, 3, 6, 10, 12, 20];
 
@@ -19,6 +20,8 @@ export default function LogScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [flash, setFlash] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const loadUser = useCallback(async () => {
     try {
@@ -43,6 +46,31 @@ export default function LogScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSession(0);
     setPhotoUri(null);
+    setLocationName(null);
+  }
+
+  async function handleGetLocation() {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Location access is required to tag a location.');
+        return;
+      }
+      const coords = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [place] = await Location.reverseGeocodeAsync(coords.coords);
+      if (place) {
+        const name = [place.name, place.city, place.region]
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(', ');
+        setLocationName(name);
+      }
+    } catch {
+      Alert.alert('Could not get location', 'Try again or skip.');
+    } finally {
+      setLocating(false);
+    }
   }
 
   async function handlePickPhoto() {
@@ -94,10 +122,11 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const newTotal = await logWings(session, photoUri ?? undefined);
+      const newTotal = await logWings(session, photoUri ?? undefined, locationName ?? undefined);
       setTotal(newTotal);
       setSession(0);
       setPhotoUri(null);
+      setLocationName(null);
       setFlash(true);
       setTimeout(() => setFlash(false), 800);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -160,18 +189,33 @@ export default function LogScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Photo picker */}
-          {photoUri ? (
+          {/* Photo + Location row */}
+          <View style={styles.attachRow}>
+            {photoUri ? (
+              <TouchableOpacity style={[styles.attachChip, styles.attachChipActive]} onPress={() => setPhotoUri(null)}>
+                <Text style={styles.attachChipText}>📷 Photo ✕</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.attachChip} onPress={handlePickPhoto}>
+                <Text style={styles.attachChipText}>📷 Add photo</Text>
+              </TouchableOpacity>
+            )}
+            {locationName ? (
+              <TouchableOpacity style={[styles.attachChip, styles.attachChipActive]} onPress={() => setLocationName(null)}>
+                <Text style={styles.attachChipText}>📍 {locationName} ✕</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.attachChip} onPress={handleGetLocation} disabled={locating}>
+                <Text style={styles.attachChipText}>{locating ? 'Locating...' : '📍 Add location'}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Photo preview */}
+          {photoUri && (
             <View style={styles.photoPreviewBox}>
               <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-              <TouchableOpacity style={styles.removePhoto} onPress={() => setPhotoUri(null)}>
-                <Text style={styles.removePhotoText}>✕ Remove photo</Text>
-              </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity style={styles.photoBtn} onPress={handlePickPhoto}>
-              <Text style={styles.photoBtnText}>📷  Add a photo</Text>
-            </TouchableOpacity>
           )}
 
           {/* Submit button */}
@@ -247,22 +291,20 @@ const styles = StyleSheet.create({
   clearBtn: { borderColor: '#7f1d1d' },
   clearBtnText: { color: '#ef4444', fontSize: 20, fontWeight: '700' },
 
-  // Photo
-  photoBtn: {
+  // Attach row
+  attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12, flexWrap: 'wrap' },
+  attachChip: {
     backgroundColor: '#2A1A10',
     borderWidth: 1,
     borderColor: '#3D2618',
-    borderRadius: 14,
-    borderStyle: 'dashed',
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 12,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
-  photoBtnText: { color: '#78716c', fontSize: 15 },
+  attachChipActive: { borderColor: '#E8722A', backgroundColor: '#3D2010' },
+  attachChipText: { color: '#78716c', fontSize: 13 },
   photoPreviewBox: { marginBottom: 12 },
-  photoPreview: { width: '100%', height: 180, borderRadius: 14, marginBottom: 8 },
-  removePhoto: { alignItems: 'center' },
-  removePhotoText: { color: '#ef4444', fontSize: 13 },
+  photoPreview: { width: '100%', height: 180, borderRadius: 14 },
 
   // Submit
   submitBtn: {

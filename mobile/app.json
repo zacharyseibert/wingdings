@@ -40,6 +40,12 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Wingdings to tag your location when logging wings."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
