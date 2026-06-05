@@ -1,5 +1,8 @@
 import Leaderboard from '../components/Leaderboard';
 import StatsBar from '../components/StatsBar';
+import FunStats from '../components/FunStats';
+import ActivityFeed from '../components/ActivityFeed';
+import WingsChart from '../components/WingsChart';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -19,17 +22,46 @@ export default function Home() {
       {/* Global stats */}
       <StatsBar apiUrl={API_URL} />
 
-      {/* Leaderboard */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <span>🏆</span> Leaderboard
-          <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping inline-block" />
-            Live
-          </span>
-        </h2>
-        <Leaderboard />
+      {/* Fun stats */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">📊 Records</h2>
+        <FunStats apiUrl={API_URL} />
       </section>
+
+      {/* Wings over time chart */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">📈 Wings Over Time</h2>
+        <div className="bg-wing-card border border-wing-border rounded-xl p-4">
+          <WingsChart apiUrl={API_URL} />
+        </div>
+      </section>
+
+      {/* Leaderboard + Activity feed side by side on wider screens */}
+      <div className="grid grid-cols-1 gap-8">
+        <section>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>🏆</span> Leaderboard
+            <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping inline-block" />
+              Live
+            </span>
+          </h2>
+          <Leaderboard />
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>⚡</span> Recent Activity
+            <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping inline-block" />
+              Live
+            </span>
+          </h2>
+          <div className="bg-wing-card border border-wing-border rounded-xl p-4">
+            <ActivityFeed apiUrl={API_URL} />
+          </div>
+        </section>
+      </div>
 
       <footer className="mt-12 text-center text-stone-600 text-xs">
         Wingdings · Built with 🍗 and Slack

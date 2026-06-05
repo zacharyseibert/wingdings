@@ -87,3 +87,96 @@ export async function getGlobalStats() {
   const participants = data.filter(u => u.total_wings > 0).length;
   return { total, participants };
 }
+
+export async function getBiggestSession() {
+  const { data, error } = await supabase
+    .from('wing_entries')
+    .select('amount, created_at, user_id, users(display_name, username, avatar_url)')
+    .gt('amount', 0)
+    .order('amount', { ascending: false })
+    .limit(1)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+export async function getMostActiveDay() {
+  const { data, error } = await supabase
+    .from('wing_entries')
+    .select('created_at, amount')
+    .gt('amount', 0);
+  if (error) throw error;
+
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const totals = Array(7).fill(0);
+  for (const e of data) {
+    totals[new Date(e.created_at).getDay()] += e.amount;
+  }
+  const max = Math.max(...totals);
+  if (max === 0) return null;
+  return { day: days[totals.indexOf(max)], total: max };
+}
+
+export async function getLongestStreak() {
+  const { data, error } = await supabase
+    .from('wing_entries')
+    .select('user_id, created_at, users(display_name, username)')
+    .gt('amount', 0)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  // Group dates by user
+  const byUser = {};
+  for (const e of data) {
+    const uid = e.user_id;
+    const date = new Date(e.created_at).toISOString().slice(0, 10);
+    if (!byUser[uid]) byUser[uid] = { name: e.users?.display_name || e.users?.username, dates: new Set() };
+    byUser[uid].dates.add(date);
+  }
+
+  let best = { name: null, streak: 0 };
+  for (const [, { name, dates }] of Object.entries(byUser)) {
+    const sorted = Array.from(dates).sort();
+    let streak = 1, max = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      const diff = (new Date(sorted[i]) - new Date(sorted[i - 1])) / 86400000;
+      streak = diff === 1 ? streak + 1 : 1;
+      if (streak > max) max = streak;
+    }
+    if (max > best.streak) best = { name, streak: max };
+  }
+  return best.streak > 0 ? best : null;
+}
+
+export async function getRecentActivity(limit = 8) {
+  const { data, error } = await supabase
+    .from('wing_entries')
+    .select('amount, created_at, user_id, users(display_name, username, avatar_url)')
+    .gt('amount', 0)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
+export async function getWingsOverTime() {
+  const { data, error } = await supabase
+    .from('wing_entries')
+    .select('amount, created_at')
+    .gt('amount', 0)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  // Group by date and compute cumulative sum
+  const byDate = {};
+  for (const e of data) {
+    const date = new Date(e.created_at).toISOString().slice(0, 10);
+    byDate[date] = (byDate[date] || 0) + e.amount;
+  }
+
+  let cumulative = 0;
+  return Object.entries(byDate).map(([date, total]) => {
+    cumulative += total;
+    return { date, total, cumulative };
+  });
+}
