@@ -21,12 +21,13 @@ interface Props {
 
 async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
   const query = `
-    [out:json][timeout:10];
+    [out:json][timeout:15];
     (
-      node["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court"]["name"](around:800,${lat},${lng});
-      way["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court"]["name"](around:800,${lat},${lng});
+      node["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:2000,${lat},${lng});
+      way["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:2000,${lat},${lng});
+      node["shop"~"convenience|supermarket"]["name"](around:2000,${lat},${lng});
     );
-    out center 30;
+    out center 40;
   `;
 
   const res = await fetch('https://overpass-api.de/api/interpreter', {
