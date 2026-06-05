@@ -4,6 +4,40 @@ import { supabase } from './client.js';
  * Upsert a Slack user record (create if not exists, update name/avatar if changed).
  */
 export async function upsertUser({ id, username, display_name, avatar_url, email }) {
+  // Check if a mobile-only user exists with this email — if so, merge them in
+  if (email) {
+    const { data: mobUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .neq('id', id)
+      .like('id', 'mob_%')
+      .maybeSingle();
+
+    if (mobUser) {
+      // First upsert the Slack user so the FK exists
+      await supabase.from('users').upsert(
+        { id, username, display_name, avatar_url, email },
+        { onConflict: 'id', ignoreDuplicates: false }
+      );
+      // Move wing entries from mob user to Slack user
+      await supabase
+        .from('wing_entries')
+        .update({ user_id: id })
+        .eq('user_id', mobUser.id);
+      // Delete the now-empty mob user
+      await supabase.from('users').delete().eq('id', mobUser.id);
+      // Recompute total for the Slack user (trigger only fires on insert, so do it manually)
+      const { data: entries } = await supabase
+        .from('wing_entries')
+        .select('amount')
+        .eq('user_id', id);
+      const total = (entries ?? []).reduce((sum, e) => sum + e.amount, 0);
+      await supabase.from('users').update({ total_wings: total }).eq('id', id);
+      return;
+    }
+  }
+
   const { error } = await supabase
     .from('users')
     .upsert(
