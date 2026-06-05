@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
+import * as Haptics from 'expo-haptics';
 
 const PRESETS = [1, 3, 6, 10, 12, 20];
 
@@ -40,13 +41,16 @@ export default function LogScreen() {
     }
     setLoading(true);
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const newTotal = await logWings(amount);
       setTotal(newTotal);
       setFlash(true);
       setTimeout(() => setFlash(false), 600);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCustomAmount('');
       setShowCustom(false);
     } catch (err: any) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message ?? 'Something went wrong');
     } finally {
       setLoading(false);

@@ -4,6 +4,8 @@ import {
   TouchableOpacity, Alert, ScrollView, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats } from '../../lib/wings';
 
@@ -30,14 +32,18 @@ export default function ProfileScreen() {
   async function handleSignOut() {
     Alert.alert('Sign out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      { text: 'Sign out', style: 'destructive', onPress: async () => {
+        await AsyncStorage.clear();
+        await supabase.auth.signOut({ scope: 'local' });
+        router.replace('/(auth)/login');
+      }},
     ]);
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
       >
         <Text style={styles.title}>Profile</Text>
