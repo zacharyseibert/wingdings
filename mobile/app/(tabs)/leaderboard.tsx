@@ -7,16 +7,102 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderboard } from '../../lib/wings';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+interface GlobalStats {
+  total: number;
+  participants: number;
+}
+
+interface FunStats {
+  biggestSession: { amount: number; users: { display_name: string; username: string } } | null;
+  mostActiveDay: { day: string; total: number } | null;
+  longestStreak: { name: string; streak: number } | null;
+}
+
+function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; value: string; sub?: string }) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={styles.statEmoji}>{emoji}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+      {sub ? <Text style={styles.statSub}>{sub}</Text> : null}
+    </View>
+  );
+}
+
+function Header({ globalStats, funStats }: { globalStats: GlobalStats | null; funStats: FunStats | null }) {
+  const perPerson = globalStats && globalStats.participants > 0
+    ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
+    : '—';
+
+  return (
+    <View>
+      <Text style={styles.title}>🏆 Leaderboard</Text>
+
+      {/* Global stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.globalCard}>
+          <Text style={styles.globalNumber}>{globalStats ? globalStats.total.toLocaleString() : '—'}</Text>
+          <Text style={styles.globalLabel}>🍗 Total Wings</Text>
+        </View>
+        <View style={styles.globalCard}>
+          <Text style={styles.globalNumber}>{globalStats ? globalStats.participants.toLocaleString() : '—'}</Text>
+          <Text style={styles.globalLabel}>👥 Participants</Text>
+        </View>
+        <View style={styles.globalCard}>
+          <Text style={styles.globalNumber}>{perPerson}</Text>
+          <Text style={styles.globalLabel}>📊 Per Person</Text>
+        </View>
+      </View>
+
+      {/* Records */}
+      <Text style={styles.sectionTitle}>📈 Records</Text>
+      <View style={styles.recordsRow}>
+        <StatCard
+          emoji="💥"
+          label="Biggest Session"
+          value={funStats?.biggestSession ? `${funStats.biggestSession.amount}` : '—'}
+          sub={funStats?.biggestSession
+            ? `${funStats.biggestSession.users?.display_name || funStats.biggestSession.users?.username} wings`
+            : undefined}
+        />
+        <StatCard
+          emoji="📅"
+          label="Most Active Day"
+          value={funStats?.mostActiveDay?.day ?? '—'}
+          sub={funStats?.mostActiveDay ? `${funStats.mostActiveDay.total} wings` : undefined}
+        />
+        <StatCard
+          emoji="🔥"
+          label="Longest Streak"
+          value={funStats?.longestStreak ? `${funStats.longestStreak.streak}d` : '—'}
+          sub={funStats?.longestStreak?.name ?? undefined}
+        />
+      </View>
+
+      <Text style={styles.sectionTitle}>🥇 Top 10</Text>
+    </View>
+  );
+}
 
 export default function LeaderboardScreen() {
   const [board, setBoard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [funStats, setFunStats] = useState<FunStats | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const data = await getLeaderboard();
-      setBoard(data);
+      const [boardData, statsRes, funRes] = await Promise.all([
+        getLeaderboard(),
+        fetch(`${API_URL}/api/stats`).then(r => r.json()).catch(() => null),
+        fetch(`${API_URL}/api/fun-stats`).then(r => r.json()).catch(() => null),
+      ]);
+      setBoard(boardData);
+      if (statsRes) setGlobalStats(statsRes);
+      if (funRes) setFunStats(funRes);
     } catch (err: any) {
       console.error('[leaderboard]', err);
     } finally {
@@ -42,7 +128,7 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
-        ListHeaderComponent={<Text style={styles.title}>🏆 Leaderboard</Text>}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';
@@ -72,9 +158,43 @@ export default function LeaderboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1A0F0A' },
-  list: { padding: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 20 },
+  list: { padding: 20 },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#F5E6D3', marginBottom: 10, marginTop: 4 },
   empty: { color: '#78716c', fontSize: 15 },
+
+  // Global stats
+  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  globalCard: {
+    flex: 1,
+    backgroundColor: '#2A1A10',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    padding: 12,
+    alignItems: 'center',
+  },
+  globalNumber: { fontSize: 22, fontWeight: 'bold', color: '#E8722A' },
+  globalLabel: { color: '#78716c', fontSize: 10, marginTop: 2, textAlign: 'center' },
+
+  // Records
+  recordsRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#2A1A10',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    padding: 10,
+    alignItems: 'center',
+    gap: 2,
+  },
+  statEmoji: { fontSize: 20 },
+  statValue: { fontSize: 16, fontWeight: 'bold', color: '#F5E6D3' },
+  statLabel: { color: '#78716c', fontSize: 9, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statSub: { color: '#78716c', fontSize: 10, textAlign: 'center' },
+
+  // Leaderboard rows
   row: {
     flexDirection: 'row',
     alignItems: 'center',
