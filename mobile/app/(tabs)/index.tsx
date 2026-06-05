@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
 
-const PRESETS = [1, 3, 6, 10, 12, 20];
+const PRESETS = [1, 6, 10, 12];
 
 export default function LogScreen() {
   const [total, setTotal] = useState(0);
@@ -258,34 +258,35 @@ const styles = StyleSheet.create({
   sessionLabel: { color: '#78716c', fontSize: 14, marginTop: 4 },
 
   // Presets
-  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  presets: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   preset: {
+    flex: 1,
     backgroundColor: '#2A1A10',
     borderWidth: 1,
     borderColor: '#3D2618',
     borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 18,
-    minWidth: 70,
     alignItems: 'center',
   },
-  presetText: { color: '#E8722A', fontSize: 20, fontWeight: '700' },
+  presetText: { color: '#E8722A', fontSize: 18, fontWeight: '700' },
 
   clearBtn: { borderColor: '#7f1d1d' },
-  clearBtnText: { color: '#ef4444', fontSize: 20, fontWeight: '700' },
+  clearBtnText: { color: '#ef4444', fontSize: 18, fontWeight: '700' },
 
   // Attach row
-  attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12, flexWrap: 'wrap' },
+  attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   attachChip: {
+    flex: 1,
     backgroundColor: '#2A1A10',
     borderWidth: 1,
     borderColor: '#3D2618',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   attachChipActive: { borderColor: '#E8722A', backgroundColor: '#3D2010' },
-  attachChipText: { color: '#78716c', fontSize: 13 },
+  attachChipText: { color: '#78716c', fontSize: 14 },
   photoPreviewBox: { marginBottom: 12 },
   photoPreview: { width: '100%', height: 180, borderRadius: 14 },
 
