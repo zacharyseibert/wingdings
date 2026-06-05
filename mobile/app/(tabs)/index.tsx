@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
+import LocationPicker from '../../components/LocationPicker';
 
 const PRESETS = [1, 3, 6, 10, 12, 20];
 
@@ -21,7 +21,7 @@ export default function LogScreen() {
   const [flash, setFlash] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const loadUser = useCallback(async () => {
     try {
@@ -49,29 +49,6 @@ export default function LogScreen() {
     setLocationName(null);
   }
 
-  async function handleGetLocation() {
-    setLocating(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Location access is required to tag a location.');
-        return;
-      }
-      const coords = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const [place] = await Location.reverseGeocodeAsync(coords.coords);
-      if (place) {
-        const name = [place.name, place.city, place.region]
-          .filter(Boolean)
-          .slice(0, 2)
-          .join(', ');
-        setLocationName(name);
-      }
-    } catch {
-      Alert.alert('Could not get location', 'Try again or skip.');
-    } finally {
-      setLocating(false);
-    }
-  }
 
   async function handlePickPhoto() {
     Alert.alert('Add Photo', 'Choose an option', [
@@ -205,8 +182,8 @@ export default function LogScreen() {
                 <Text style={styles.attachChipText}>📍 {locationName} ✕</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.attachChip} onPress={handleGetLocation} disabled={locating}>
-                <Text style={styles.attachChipText}>{locating ? 'Locating...' : '📍 Add location'}</Text>
+              <TouchableOpacity style={styles.attachChip} onPress={() => setShowLocationPicker(true)}>
+                <Text style={styles.attachChipText}>📍 Add location</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -242,6 +219,12 @@ export default function LogScreen() {
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <LocationPicker
+        visible={showLocationPicker}
+        onSelect={(name) => setLocationName(name)}
+        onClose={() => setShowLocationPicker(false)}
+      />
     </SafeAreaView>
   );
 }
