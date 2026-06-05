@@ -103,7 +103,7 @@ export default function LogScreen() {
               placeholderTextColor="#78716c"
               returnKeyType="done"
             />
-            <Text style={styles.sessionLabel}>wings to log</Text>
+            <Text style={styles.sessionLabel}>How many wings did you just eat?</Text>
           </View>
 
           {/* Quick add + clear */}
