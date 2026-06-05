@@ -203,7 +203,7 @@ export default function LogScreen() {
             style={styles.noteInput}
             value={note}
             onChangeText={setNote}
-            placeholder="Add a note... (sauce, style, restaurant)"
+            placeholder="Add a note... (sauce, style, etc.)"
             placeholderTextColor="#78716c"
             maxLength={120}
             returnKeyType="done"
@@ -308,9 +308,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#3D2618',
     borderRadius: 14,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     color: '#F5E6D3',
     fontSize: 15,
+    height: 52,
     marginBottom: 12,
   },
 
