@@ -51,29 +51,30 @@ export async function getMobileUserId(authId: string): Promise<string> {
 export async function uploadWingPhoto(userId: string, uri: string): Promise<string> {
   const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase().replace('jpeg', 'jpg');
   const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
-  const path = `${userId}/${Date.now()}.${ext}`;
+  const filename = `${Date.now()}.${ext}`;
+  const path = `${userId}/${filename}`;
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
 
-  // Use FileSystem.uploadAsync — most reliable way to upload binary files in React Native
-  const result = await FileSystem.uploadAsync(
+  const formData = new FormData();
+  formData.append('file', { uri, name: filename, type: mimeType } as any);
+
+  const response = await fetch(
     `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/wing-photos/${path}`,
-    uri,
     {
-      httpMethod: 'POST',
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
         apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-        'Content-Type': mimeType,
-        'x-upsert': 'false',
       },
+      body: formData,
     }
   );
 
-  if (result.status !== 200) {
-    throw new Error(`Upload failed: ${result.body}`);
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Upload failed: ${err}`);
   }
 
   const { data } = supabase.storage.from('wing-photos').getPublicUrl(path);
