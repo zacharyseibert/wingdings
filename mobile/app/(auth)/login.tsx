@@ -123,9 +123,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#3D2618',
     borderRadius: 12,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     color: '#F5E6D3',
     fontSize: 16,
+    height: 52,
   },
   codeInput: { fontSize: 28, textAlign: 'center', letterSpacing: 8 },
   button: {
