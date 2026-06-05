@@ -48,12 +48,12 @@ export default function PrivacyPolicy() {
 
         <section>
           <h2 className="text-white font-semibold text-lg mb-3">Data deletion</h2>
-          <p>To delete your account and all associated data, email <a href="mailto:zack@hwffl.com" className="text-wing-orange underline">zack@hwffl.com</a> and we'll remove it within 30 days.</p>
+          <p>To delete your account and all associated data, email <a href="mailto:zacharyseibert@gmail.com" className="text-wing-orange underline">zacharyseibert@gmail.com</a> and we'll remove it within 30 days.</p>
         </section>
 
         <section>
           <h2 className="text-white font-semibold text-lg mb-3">Contact</h2>
-          <p>Questions? <a href="mailto:zack@hwffl.com" className="text-wing-orange underline">zack@hwffl.com</a></p>
+          <p>Questions? <a href="mailto:zacharyseibert@gmail.com" className="text-wing-orange underline">zacharyseibert@gmail.com</a></p>
         </section>
       </div>
     </main>
