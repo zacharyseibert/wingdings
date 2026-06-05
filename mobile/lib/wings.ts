@@ -47,9 +47,33 @@ export async function getMobileUserId(authId: string): Promise<string> {
   return data?.id ?? `mob_${authId}`;
 }
 
-export async function logWings(amount: number): Promise<number> {
+export async function uploadWingPhoto(userId: string, uri: string): Promise<string> {
+  const ext = uri.split('.').pop() ?? 'jpg';
+  const path = `${userId}/${Date.now()}.${ext}`;
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  const { error } = await supabase.storage
+    .from('wing-photos')
+    .upload(path, blob, { contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`, upsert: false });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from('wing-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function logWings(amount: number, photoUri?: string): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
+
+  // Upload photo first if provided
+  let photoUrl: string | undefined;
+  if (photoUri) {
+    const userId = await getMobileUserId(session.user.id);
+    photoUrl = await uploadWingPhoto(userId, photoUri);
+  }
 
   const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/log`, {
     method: 'POST',
@@ -57,7 +81,7 @@ export async function logWings(amount: number): Promise<number> {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ amount, photoUrl }),
   });
 
   if (!res.ok) {

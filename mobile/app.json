@@ -33,6 +33,13 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Wingdings to attach photos to your wing logs.",
+          "cameraPermission": "Allow Wingdings to take photos of your wings."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",

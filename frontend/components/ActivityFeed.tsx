@@ -7,6 +7,7 @@ interface Entry {
   amount: number;
   created_at: string;
   user_id: string;
+  photo_url?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -91,11 +92,20 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <span className="font-medium">{name}</span>
-              <span className="text-stone-400"> ate </span>
-              <span className="text-wing-orange font-bold">{e.amount} wings</span>
+              <div>
+                <span className="font-medium">{name}</span>
+                <span className="text-stone-400"> ate </span>
+                <span className="text-wing-orange font-bold">{e.amount} wings</span>
+                <span className="text-stone-500 text-xs ml-2">{timeAgo(e.created_at)}</span>
+              </div>
+              {e.photo_url && (
+                <img
+                  src={e.photo_url}
+                  alt="wing photo"
+                  className="mt-2 rounded-lg max-h-48 object-cover w-full"
+                />
+              )}
             </div>
-            <div className="text-stone-500 text-xs shrink-0">{timeAgo(e.created_at)}</div>
           </li>
         );
       })}

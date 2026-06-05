@@ -23,6 +23,7 @@ interface FunStats {
 interface RecentEntry {
   amount: number;
   created_at: string;
+  photo_url?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -107,11 +108,22 @@ function Header({ globalStats, funStats, recent }: { globalStats: GlobalStats | 
                   <View style={styles.recentAvatar}>
                     <Text style={styles.recentAvatarText}>{name[0].toUpperCase()}</Text>
                   </View>
-                  <Text style={styles.recentText}>
-                    <Text style={styles.recentName}>{name}</Text>
-                    <Text style={styles.recentWings}> ate {e.amount} wings</Text>
-                  </Text>
-                  <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={styles.recentText}>
+                        <Text style={styles.recentName}>{name}</Text>
+                        <Text style={styles.recentWings}> ate {e.amount} wings</Text>
+                      </Text>
+                      <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                    </View>
+                    {e.photo_url && (
+                      <Image
+                        source={{ uri: e.photo_url }}
+                        style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </View>
                 </View>
               );
             })}
