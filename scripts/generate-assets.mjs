@@ -1,11 +1,11 @@
 import sharp from 'sharp';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const assetsDir = resolve(__dirname, '../mobile/assets');
 
-// Fetch the chicken wing emoji SVG from Twemoji
 const EMOJI_URL = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f357.svg';
 
 async function fetchEmoji() {
@@ -26,39 +26,31 @@ function backgroundSvg(size) {
   </svg>`;
 }
 
-async function generate() {
-  console.log('Fetching chicken wing emoji from Twemoji...');
-  const emojiSvg = await fetchEmoji();
+async function makeIcon(emojiSvg, size, emojiPct = 0.82) {
+  const emojiSize = Math.round(size * emojiPct);
+  const offset = Math.round((size - emojiSize) / 2);
 
-  // Generate icon at 1024x1024
-  const iconSize = 1024;
-  const emojiSize = Math.round(iconSize * 0.78);
-  const offset = Math.round((iconSize - emojiSize) / 2);
-
-  console.log('Generating icon...');
-  const bg = await sharp(Buffer.from(backgroundSvg(iconSize))).png().toBuffer();
+  const bg = await sharp(Buffer.from(backgroundSvg(size))).png().toBuffer();
   const emoji = await sharp(emojiSvg).resize(emojiSize, emojiSize).png().toBuffer();
 
-  await sharp(bg)
+  return sharp(bg)
     .composite([{ input: emoji, top: offset, left: offset }])
     .png()
-    .toFile(`${assetsDir}/icon.png`);
+    .toBuffer();
+}
 
-  await sharp(bg)
-    .composite([{ input: emoji, top: offset, left: offset }])
-    .png()
-    .toFile(`${assetsDir}/adaptive-icon.png`);
+async function generate() {
+  console.log('Fetching chicken wing emoji...');
+  const emojiSvg = await fetchEmoji();
 
-  // Splash icon — smaller, on transparent bg (Expo centers it on backgroundColor)
+  console.log('Generating icon...');
+  const icon = await makeIcon(emojiSvg, 1024, 0.82);
+  writeFileSync(`${assetsDir}/icon.png`, icon);
+  writeFileSync(`${assetsDir}/adaptive-icon.png`, icon);
+
   console.log('Generating splash icon...');
-  const splashSize = 512;
-  const splashEmoji = await sharp(emojiSvg).resize(splashSize, splashSize).png().toBuffer();
-  await sharp({
-    create: { width: splashSize, height: splashSize, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
-  })
-    .composite([{ input: splashEmoji }])
-    .png()
-    .toFile(`${assetsDir}/splash-icon.png`);
+  const splash = await makeIcon(emojiSvg, 512, 0.82);
+  writeFileSync(`${assetsDir}/splash-icon.png`, splash);
 
   console.log('✅ Done!');
 }
