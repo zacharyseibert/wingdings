@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import * as FileSystem from 'expo-file-system';
 
 /**
  * On mobile login, link this auth session to the right user:
@@ -48,15 +49,26 @@ export async function getMobileUserId(authId: string): Promise<string> {
 }
 
 export async function uploadWingPhoto(userId: string, uri: string): Promise<string> {
-  const ext = uri.split('.').pop() ?? 'jpg';
-  const path = `${userId}/${Date.now()}.${ext}`;
+  const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase();
+  const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+  const filename = `${Date.now()}.${ext === 'jpg' ? 'jpg' : ext}`;
+  const path = `${userId}/${filename}`;
 
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  // Read as base64 using expo-file-system (handles local file:// URIs on RN)
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  // Decode base64 to Uint8Array
+  const binaryStr = atob(base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
 
   const { error } = await supabase.storage
     .from('wing-photos')
-    .upload(path, blob, { contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`, upsert: false });
+    .upload(path, bytes, { contentType: mimeType, upsert: false });
 
   if (error) throw error;
 
