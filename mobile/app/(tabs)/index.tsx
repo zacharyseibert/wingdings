@@ -207,6 +207,8 @@ export default function LogScreen() {
             placeholderTextColor="#78716c"
             maxLength={120}
             returnKeyType="done"
+            numberOfLines={1}
+            multiline={false}
           />
 
           {/* Submit button */}
@@ -312,7 +314,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     color: '#F5E6D3',
     fontSize: 15,
-    height: 52,
+    height: 56,
     marginBottom: 12,
   },
 
