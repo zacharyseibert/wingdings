@@ -1,10 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
-function Icon({ label }: { label: string }) {
-  return <Text style={{ fontSize: 22 }}>{label}</Text>;
-}
-
 export default function TabLayout() {
   return (
     <Tabs
@@ -22,21 +18,27 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Log Wings',
-          tabBarIcon: ({ focused }) => <Icon label={focused ? '🍗' : '🍖'} />,
+          tabBarIcon: function({ focused }) {
+            return <Text style={{ fontSize: 22 }}>{focused ? '🍗' : '🍖'}</Text>;
+          },
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
           title: 'My Stats',
-          tabBarIcon={() => <Icon label="📊" />},
+          tabBarIcon: function() {
+            return <Text style={{ fontSize: 22 }}>📊</Text>;
+          },
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
           title: 'Leaderboard',
-          tabBarIcon={() => <Icon label="🏆" />},
+          tabBarIcon: function() {
+            return <Text style={{ fontSize: 22 }}>🏆</Text>;
+          },
         }}
       />
     </Tabs>

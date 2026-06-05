@@ -7,10 +7,11 @@ import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState<'email' | 'code'>('email');
 
-  async function sendMagicLink() {
+  async function sendCode() {
     if (!email.trim()) return;
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
@@ -21,8 +22,23 @@ export default function LoginScreen() {
     if (error) {
       Alert.alert('Error', error.message);
     } else {
-      setSent(true);
+      setStep('code');
     }
+  }
+
+  async function verifyCode() {
+    if (!code.trim()) return;
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: 'email',
+    });
+    setLoading(false);
+    if (error) {
+      Alert.alert('Invalid code', 'Check the code and try again.');
+    }
+    // Auth state change in _layout.tsx handles navigation on success
   }
 
   return (
@@ -34,17 +50,7 @@ export default function LoginScreen() {
       <Text style={styles.title}>Wingdings</Text>
       <Text style={styles.sub}>Track every wing. Crown every champion.</Text>
 
-      {sent ? (
-        <View style={styles.sentBox}>
-          <Text style={styles.sentTitle}>Check your email</Text>
-          <Text style={styles.sentText}>
-            We sent a magic link to {email}. Tap it to sign in.
-          </Text>
-          <TouchableOpacity onPress={() => setSent(false)}>
-            <Text style={styles.link}>Use a different email</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
+      {step === 'email' ? (
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -55,18 +61,43 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            onSubmitEditing={sendMagicLink}
+            onSubmitEditing={sendCode}
           />
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={sendMagicLink}
+            onPress={sendCode}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Send Magic Link</Text>
-            )}
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>Send Code</Text>}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.form}>
+          <Text style={styles.hint}>Enter the 6-digit code sent to {email}</Text>
+          <TextInput
+            style={[styles.input, styles.codeInput]}
+            placeholder="000000"
+            placeholderTextColor="#78716c"
+            value={code}
+            onChangeText={setCode}
+            keyboardType="number-pad"
+            maxLength={6}
+            autoFocus
+            onSubmitEditing={verifyCode}
+          />
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={verifyCode}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>Sign In</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setStep('email'); setCode(''); }}>
+            <Text style={styles.link}>Use a different email</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -85,6 +116,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 72, marginBottom: 12 },
   title: { fontSize: 36, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 8 },
   sub: { fontSize: 15, color: '#78716c', marginBottom: 48, textAlign: 'center' },
+  hint: { color: '#78716c', fontSize: 14, marginBottom: 8, textAlign: 'center' },
   form: { width: '100%', gap: 12 },
   input: {
     backgroundColor: '#2A1A10',
@@ -95,6 +127,7 @@ const styles = StyleSheet.create({
     color: '#F5E6D3',
     fontSize: 16,
   },
+  codeInput: { fontSize: 28, textAlign: 'center', letterSpacing: 8 },
   button: {
     backgroundColor: '#E8722A',
     borderRadius: 12,
@@ -103,8 +136,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  sentBox: { alignItems: 'center', gap: 12 },
-  sentTitle: { fontSize: 22, fontWeight: 'bold', color: '#F5E6D3' },
-  sentText: { color: '#78716c', textAlign: 'center', lineHeight: 22 },
-  link: { color: '#E8722A', marginTop: 8 },
+  link: { color: '#E8722A', textAlign: 'center', marginTop: 4 },
 });

@@ -3,11 +3,11 @@ import { supabase } from './client.js';
 /**
  * Upsert a Slack user record (create if not exists, update name/avatar if changed).
  */
-export async function upsertUser({ id, username, display_name, avatar_url }) {
+export async function upsertUser({ id, username, display_name, avatar_url, email }) {
   const { error } = await supabase
     .from('users')
     .upsert(
-      { id, username, display_name, avatar_url },
+      { id, username, display_name, avatar_url, ...(email ? { email } : {}) },
       { onConflict: 'id', ignoreDuplicates: false }
     );
   if (error) throw error;

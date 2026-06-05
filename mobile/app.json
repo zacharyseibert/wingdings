@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1A0F0A",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "foregroundImage": "./assets/icon.png"
       },
       "package": "com.zacharyseibert.wingdings"
     },
@@ -23,8 +23,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-web-browser"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

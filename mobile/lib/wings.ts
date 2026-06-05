@@ -1,11 +1,39 @@
 import { supabase } from './supabase';
 
-export async function ensureProfile(userId: string, email: string) {
-  const displayName = email.split('@')[0];
-  await supabase.from('users').upsert(
-    { id: `mob_${userId}`, username: displayName, display_name: displayName, auth_id: userId },
-    { onConflict: 'auth_id', ignoreDuplicates: false }
-  );
+/**
+ * On mobile login, find existing user by email (Slack user) and link auth_id to them.
+ * If no match, create a new mobile user.
+ */
+export async function ensureProfile(authId: string, email: string) {
+  // Check if a user already exists with this email (e.g. a Slack user)
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id, auth_id')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existing) {
+    // Link this auth session to the existing user if not already linked
+    if (!existing.auth_id) {
+      await supabase
+        .from('users')
+        .update({ auth_id: authId })
+        .eq('id', existing.id);
+    }
+  } else {
+    // No Slack user found — create a new mobile-only user
+    const displayName = email.split('@')[0];
+    await supabase.from('users').upsert(
+      {
+        id: `mob_${authId}`,
+        username: displayName,
+        display_name: displayName,
+        email,
+        auth_id: authId,
+      },
+      { onConflict: 'auth_id', ignoreDuplicates: false }
+    );
+  }
 }
 
 export async function getMobileUserId(authId: string): Promise<string> {

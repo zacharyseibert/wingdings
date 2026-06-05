@@ -15,13 +15,15 @@ export async function handleAdd(args, body, client, respond) {
   // Fetch richer profile data (display name + avatar)
   let displayName = user_name;
   let avatarUrl = null;
+  let email = null;
   try {
     const profile = await client.users.info({ user: user_id });
     displayName = profile.user.profile.display_name || profile.user.real_name || user_name;
     avatarUrl = profile.user.profile.image_72;
+    email = profile.user.profile.email ?? null;
   } catch (_) { /* non-fatal */ }
 
-  await upsertUser({ id: user_id, username: user_name, display_name: displayName, avatar_url: avatarUrl });
+  await upsertUser({ id: user_id, username: user_name, display_name: displayName, avatar_url: avatarUrl, email });
   await addWings(user_id, amount);
 
   const user = await getUser(user_id);

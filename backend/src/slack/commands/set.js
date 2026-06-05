@@ -39,6 +39,7 @@ export async function handleSet(args, body, client, respond) {
       username: profile.user.name,
       display_name: targetName,
       avatar_url: profile.user.profile.image_72,
+      email: profile.user.profile.email ?? null,
     });
   } catch (_) { /* user may already exist */ }
 
