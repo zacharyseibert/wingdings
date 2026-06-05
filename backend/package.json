@@ -1,0 +1,23 @@
+{
+  "name": "wingdings-backend",
+  "version": "1.0.0",
+  "description": "Wingdings Slack bot backend",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.21.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "express": "^4.21.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

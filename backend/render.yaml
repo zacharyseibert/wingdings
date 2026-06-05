@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: wingdings-bot
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_SIGNING_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_SLACK_IDS
+        sync: false
+
+  # Free cron job — pings the health endpoint to keep the web service warm
+  - type: cron
+    name: wingdings-keepalive
+    runtime: node
+    schedule: "*/10 * * * *"
+    buildCommand: echo "ok"
+    startCommand: node -e "fetch('https://wingdings-bot.onrender.com/api/health').then(r=>console.log('ping',r.status)).catch(console.error)"

@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #1A0F0A;
+  color: #F5E6D3;
+}
+
+@keyframes pulse-wing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.wing-pulse {
+  animation: pulse-wing 2s ease-in-out infinite;
+}
