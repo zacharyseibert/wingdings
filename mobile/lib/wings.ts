@@ -49,28 +49,32 @@ export async function getMobileUserId(authId: string): Promise<string> {
 }
 
 export async function uploadWingPhoto(userId: string, uri: string): Promise<string> {
-  const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase();
-  const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
-  const filename = `${Date.now()}.${ext === 'jpg' ? 'jpg' : ext}`;
-  const path = `${userId}/${filename}`;
+  const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase().replace('jpeg', 'jpg');
+  const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+  const path = `${userId}/${Date.now()}.${ext}`;
 
-  // Read as base64 using expo-file-system (handles local file:// URIs on RN)
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
 
-  // Decode base64 to Uint8Array
-  const binaryStr = atob(base64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) {
-    bytes[i] = binaryStr.charCodeAt(i);
+  // Use FileSystem.uploadAsync — most reliable way to upload binary files in React Native
+  const result = await FileSystem.uploadAsync(
+    `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/wing-photos/${path}`,
+    uri,
+    {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+        'Content-Type': mimeType,
+        'x-upsert': 'false',
+      },
+    }
+  );
+
+  if (result.status !== 200) {
+    throw new Error(`Upload failed: ${result.body}`);
   }
-
-  const { error } = await supabase.storage
-    .from('wing-photos')
-    .upload(path, bytes, { contentType: mimeType, upsert: false });
-
-  if (error) throw error;
 
   const { data } = supabase.storage.from('wing-photos').getPublicUrl(path);
   return data.publicUrl;
