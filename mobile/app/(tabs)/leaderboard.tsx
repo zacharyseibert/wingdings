@@ -20,6 +20,20 @@ interface FunStats {
   longestStreak: { name: string; streak: number } | null;
 }
 
+interface RecentEntry {
+  amount: number;
+  created_at: string;
+  users: { display_name: string; username: string; avatar_url: string | null };
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; value: string; sub?: string }) {
   return (
     <View style={styles.statCard}>
@@ -31,7 +45,7 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats }: { globalStats: GlobalStats | null; funStats: FunStats | null }) {
+function Header({ globalStats, funStats, recent }: { globalStats: GlobalStats | null; funStats: FunStats | null; recent: RecentEntry[] }) {
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
     : '—';
@@ -81,6 +95,30 @@ function Header({ globalStats, funStats }: { globalStats: GlobalStats | null; fu
         />
       </View>
 
+      {/* Recent activity */}
+      {recent.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>⚡ Recent Activity</Text>
+          <View style={styles.recentBox}>
+            {recent.map((e, i) => {
+              const name = e.users?.display_name || e.users?.username || 'Someone';
+              return (
+                <View key={i} style={[styles.recentRow, i === recent.length - 1 && { borderBottomWidth: 0 }]}>
+                  <View style={styles.recentAvatar}>
+                    <Text style={styles.recentAvatarText}>{name[0].toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.recentText}>
+                    <Text style={styles.recentName}>{name}</Text>
+                    <Text style={styles.recentWings}> ate {e.amount} wings</Text>
+                  </Text>
+                  <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
+
       <Text style={styles.sectionTitle}>🥇 Top 10</Text>
     </View>
   );
@@ -92,17 +130,20 @@ export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [funStats, setFunStats] = useState<FunStats | null>(null);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
 
   const load = useCallback(async () => {
     try {
-      const [boardData, statsRes, funRes] = await Promise.all([
+      const [boardData, statsRes, funRes, recentRes] = await Promise.all([
         getLeaderboard(),
         fetch(`${API_URL}/api/stats`).then(r => r.json()).catch(() => null),
         fetch(`${API_URL}/api/fun-stats`).then(r => r.json()).catch(() => null),
+        fetch(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
       ]);
       setBoard(boardData);
       if (statsRes) setGlobalStats(statsRes);
       if (funRes) setFunStats(funRes);
+      if (recentRes?.data) setRecent(recentRes.data);
     } catch (err: any) {
       console.error('[leaderboard]', err);
     } finally {
@@ -128,7 +169,7 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';
@@ -214,4 +255,33 @@ const styles = StyleSheet.create({
   wingsBox: { alignItems: 'flex-end' },
   wingsNumber: { color: '#E8722A', fontSize: 20, fontWeight: 'bold' },
   wingsLabel: { color: '#78716c', fontSize: 11 },
+
+  // Recent activity
+  recentBox: {
+    backgroundColor: '#2A1A10',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3D2618',
+    gap: 10,
+  },
+  recentAvatar: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#3D2618',
+    alignItems: 'center', justifyContent: 'center',
+    shrink: 0,
+  },
+  recentAvatarText: { color: '#E8722A', fontWeight: 'bold', fontSize: 13 },
+  recentText: { flex: 1 },
+  recentName: { color: '#F5E6D3', fontWeight: '600', fontSize: 14 },
+  recentWings: { color: '#E8722A', fontSize: 14 },
+  recentTime: { color: '#78716c', fontSize: 12 },
 });
