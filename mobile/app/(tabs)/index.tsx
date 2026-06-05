@@ -11,7 +11,6 @@ import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
 const PRESETS = [1, 3, 6, 10, 12, 20];
 
 export default function LogScreen() {
-  const [userId, setUserId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -24,7 +23,6 @@ export default function LogScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const uid = await getMobileUserId(session.user.id);
-      setUserId(uid);
       const { user } = await getMyStats(uid);
       setTotal(user?.total_wings ?? 0);
     } finally {
@@ -35,15 +33,15 @@ export default function LogScreen() {
   useEffect(() => { loadUser(); }, [loadUser]);
 
   async function handleLog(amount: number) {
-    if (!userId || loading) return;
+    if (loading) return;
     if (amount <= 0 || amount > 10000) {
       Alert.alert('Invalid amount', 'Enter a number between 1 and 10,000.');
       return;
     }
     setLoading(true);
     try {
-      await logWings(userId, amount);
-      setTotal(prev => prev + amount);
+      const newTotal = await logWings(amount);
+      setTotal(newTotal);
       setFlash(true);
       setTimeout(() => setFlash(false), 600);
       setCustomAmount('');

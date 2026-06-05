@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, getLongestStreak, getRecentActivity, getWingsOverTime } from '../db/wings.js';
+import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, getLongestStreak, getRecentActivity, getWingsOverTime, addWings, getUser } from '../db/wings.js';
+import { sendWingNotification } from '../push.js';
+import { supabase } from '../db/client.js';
 
 const router = Router();
 
@@ -60,6 +62,71 @@ router.get('/wings-over-time', async (_req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[api] wings-over-time error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/log — log wings from mobile app (JWT auth)
+router.post('/mobile/log', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Find the user record linked to this auth ID
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, display_name, username')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+    const { amount } = req.body;
+    if (!amount || typeof amount !== 'number' || amount <= 0 || amount > 10000) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+
+    await addWings(profile.id, amount);
+    const updated = await getUser(profile.id);
+
+    sendWingNotification({
+      loggerUserId: profile.id,
+      loggerName: profile.display_name || profile.username,
+      amount,
+    }).catch(console.error);
+
+    res.json({ total_wings: updated.total_wings });
+  } catch (err) {
+    console.error('[api] mobile/log error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/token — register push token
+router.post('/mobile/token', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { pushToken } = req.body;
+    if (!pushToken) return res.status(400).json({ error: 'Missing pushToken' });
+
+    await supabase
+      .from('users')
+      .update({ push_token: pushToken })
+      .eq('auth_id', user.id);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[api] mobile/token error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

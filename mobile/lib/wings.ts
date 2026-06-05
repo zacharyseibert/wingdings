@@ -47,11 +47,26 @@ export async function getMobileUserId(authId: string): Promise<string> {
   return data?.id ?? `mob_${authId}`;
 }
 
-export async function logWings(userId: string, amount: number) {
-  const { error } = await supabase
-    .from('wing_entries')
-    .insert({ user_id: userId, amount });
-  if (error) throw error;
+export async function logWings(amount: number): Promise<number> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
+
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/log`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ amount }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to log wings');
+  }
+
+  const data = await res.json();
+  return data.total_wings;
 }
 
 export async function getMyStats(userId: string) {

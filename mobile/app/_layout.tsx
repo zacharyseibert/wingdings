@@ -4,6 +4,7 @@ import { Session } from '@supabase/supabase-js';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { ensureProfile } from '../lib/wings';
+import { registerForPushNotifications } from '../lib/notifications';
 import * as Linking from 'expo-linking';
 
 export default function RootLayout() {
@@ -20,6 +21,7 @@ export default function RootLayout() {
       setSession(session);
       if (session) {
         await ensureProfile(session.user.id, session.user.email ?? '');
+        registerForPushNotifications().catch(console.error);
       }
     });
 

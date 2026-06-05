@@ -1,4 +1,5 @@
 import { upsertUser, addWings, getUser } from '../../db/wings.js';
+import { sendWingNotification } from '../../push.js';
 
 export async function handleAdd(args, body, client, respond) {
   const amount = parseInt(args[0], 10);
@@ -28,6 +29,9 @@ export async function handleAdd(args, body, client, respond) {
 
   const user = await getUser(user_id);
   const emoji = amount >= 20 ? '🍗🔥' : '🍗';
+
+  // Send push notifications to everyone else (non-blocking)
+  sendWingNotification({ loggerUserId: user_id, loggerName: displayName, amount }).catch(console.error);
 
   return respond({
     response_type: 'in_channel',
