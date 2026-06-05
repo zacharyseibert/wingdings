@@ -22,6 +22,7 @@ export default function LogScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [note, setNote] = useState('');
 
   const loadUser = useCallback(async () => {
     try {
@@ -47,6 +48,7 @@ export default function LogScreen() {
     setSession(0);
     setPhotoUri(null);
     setLocationName(null);
+    setNote('');
   }
 
 
@@ -99,11 +101,12 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const newTotal = await logWings(session, photoUri ?? undefined, locationName ?? undefined);
+      const newTotal = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined);
       setTotal(newTotal);
       setSession(0);
       setPhotoUri(null);
       setLocationName(null);
+      setNote('');
       setFlash(true);
       setTimeout(() => setFlash(false), 800);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -194,6 +197,17 @@ export default function LogScreen() {
               <Image source={{ uri: photoUri }} style={styles.photoPreview} />
             </View>
           )}
+
+          {/* Note */}
+          <TextInput
+            style={styles.noteInput}
+            value={note}
+            onChangeText={setNote}
+            placeholder="Add a note... (sauce, style, restaurant)"
+            placeholderTextColor="#78716c"
+            maxLength={120}
+            returnKeyType="done"
+          />
 
           {/* Submit button */}
           <TouchableOpacity
@@ -289,6 +303,16 @@ const styles = StyleSheet.create({
   attachChipText: { color: '#78716c', fontSize: 14 },
   photoPreviewBox: { marginBottom: 12 },
   photoPreview: { width: '100%', height: 180, borderRadius: 14 },
+  noteInput: {
+    backgroundColor: '#2A1A10',
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    borderRadius: 14,
+    padding: 14,
+    color: '#F5E6D3',
+    fontSize: 15,
+    marginBottom: 12,
+  },
 
   // Submit
   submitBtn: {

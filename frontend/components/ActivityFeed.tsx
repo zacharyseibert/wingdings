@@ -9,6 +9,7 @@ interface Entry {
   user_id: string;
   photo_url?: string | null;
   location_name?: string | null;
+  note?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -79,7 +80,7 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
     <ul className="space-y-0">
       {entries.map((e, i) => {
         const name = e.users?.display_name || e.users?.username || 'Someone';
-        const hasExtras = !!(e.photo_url || e.location_name);
+        const hasExtras = !!(e.photo_url || e.location_name || e.note);
         const isExpanded = expanded === i;
 
         return (
@@ -103,6 +104,7 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
                 <span className="text-stone-500 text-xs ml-2">{timeAgo(e.created_at)}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
+                {e.note && <span className="text-sm">💬</span>}
                 {e.photo_url && <span className="text-sm">📷</span>}
                 {e.location_name && <span className="text-sm">📍</span>}
                 {hasExtras && (
@@ -114,6 +116,7 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
             {/* Expanded content */}
             {isExpanded && (
               <div className="pb-3 pl-11 space-y-2">
+                {e.note && <p className="text-stone-400 text-sm">💬 {e.note}</p>}
                 {e.location_name && (
                   <p className="text-stone-400 text-sm">📍 {e.location_name}</p>
                 )}

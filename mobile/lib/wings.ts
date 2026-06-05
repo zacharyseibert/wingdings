@@ -81,7 +81,7 @@ export async function uploadWingPhoto(userId: string, uri: string): Promise<stri
   return data.publicUrl;
 }
 
-export async function logWings(amount: number, photoUri?: string, locationName?: string): Promise<number> {
+export async function logWings(amount: number, photoUri?: string, locationName?: string, note?: string): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
 
@@ -98,7 +98,7 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ amount, photoUrl, locationName }),
+    body: JSON.stringify({ amount, photoUrl, locationName, note }),
   });
 
   if (!res.ok) {
@@ -115,7 +115,7 @@ export async function getMyStats(userId: string) {
     supabase.from('users').select('*').eq('id', userId).single(),
     supabase
       .from('wing_entries')
-      .select('amount, created_at, photo_url, location_name')
+      .select('amount, created_at, photo_url, location_name, note')
       .eq('user_id', userId)
       .gt('amount', 0)
       .order('created_at', { ascending: false })

@@ -25,6 +25,7 @@ interface RecentEntry {
   created_at: string;
   photo_url?: string | null;
   location_name?: string | null;
+  note?: string | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -110,7 +111,7 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
           <View style={styles.recentBox}>
             {recent.map((e, i) => {
               const name = e.users?.display_name || e.users?.username || 'Someone';
-              const hasExtras = !!(e.photo_url || e.location_name);
+              const hasExtras = !!(e.photo_url || e.location_name || e.note);
               const isExpanded = expandedEntry === i;
               return (
                 <TouchableOpacity
@@ -129,6 +130,7 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
                         <Text style={styles.recentWings}> ate {e.amount} wings</Text>
                       </Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        {e.note && <Text style={{ fontSize: 12 }}>💬</Text>}
                         {e.photo_url && <Text style={{ fontSize: 12 }}>📷</Text>}
                         {e.location_name && <Text style={{ fontSize: 12 }}>📍</Text>}
                         <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
@@ -136,6 +138,9 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
                     </View>
                     {isExpanded && (
                       <>
+                        {e.note && (
+                          <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>
+                        )}
                         {e.location_name && (
                           <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
                         )}

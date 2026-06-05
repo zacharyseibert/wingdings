@@ -191,7 +191,7 @@ export async function getLongestStreak() {
 export async function getRecentActivity(limit = 8) {
   const { data, error } = await supabase
     .from('wing_entries')
-    .select('amount, created_at, user_id, photo_url, location_name, users(display_name, username, avatar_url)')
+    .select('amount, created_at, user_id, photo_url, location_name, note, users(display_name, username, avatar_url)')
     .gt('amount', 0)
     .order('created_at', { ascending: false })
     .limit(limit);

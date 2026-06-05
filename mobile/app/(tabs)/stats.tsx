@@ -71,6 +71,9 @@ export default function StatsScreen() {
                   <Text style={styles.rowAmount}>+{e.amount} wings</Text>
                   <Text style={styles.rowTime}>{timeAgo(e.created_at)}</Text>
                 </View>
+                {e.note && (
+                  <Text style={styles.rowLocation}>💬 {e.note}</Text>
+                )}
                 {e.location_name && (
                   <Text style={styles.rowLocation}>📍 {e.location_name}</Text>
                 )}
