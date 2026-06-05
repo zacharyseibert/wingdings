@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.zacharyseibert.wingdings"
+      "bundleIdentifier": "com.zacharyseibert.wingdings",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,6 +43,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "27f74564-6f5a-44f1-a230-ee277cc767e8"
+      }
+    },
+    "owner": "zacharyseibert"
   }
 }

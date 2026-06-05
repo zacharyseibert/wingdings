@@ -25,9 +25,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "zacharyseibert@gmail.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "zacharyseibert@gmail.com"
       }
     }
   }
