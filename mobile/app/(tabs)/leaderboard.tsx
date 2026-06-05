@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
-  RefreshControl, ActivityIndicator, Image,
+  RefreshControl, ActivityIndicator, Image, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderboard } from '../../lib/wings';
@@ -47,7 +47,13 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats, recent }: { globalStats: GlobalStats | null; funStats: FunStats | null; recent: RecentEntry[] }) {
+function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry }: {
+  globalStats: GlobalStats | null;
+  funStats: FunStats | null;
+  recent: RecentEntry[];
+  expandedEntry: number | null;
+  setExpandedEntry: (i: number | null) => void;
+}) {
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
     : '—';
@@ -104,31 +110,46 @@ function Header({ globalStats, funStats, recent }: { globalStats: GlobalStats | 
           <View style={styles.recentBox}>
             {recent.map((e, i) => {
               const name = e.users?.display_name || e.users?.username || 'Someone';
+              const hasExtras = !!(e.photo_url || e.location_name);
+              const isExpanded = expandedEntry === i;
               return (
-                <View key={i} style={[styles.recentRow, i === recent.length - 1 && { borderBottomWidth: 0 }]}>
+                <TouchableOpacity
+                  key={i}
+                  activeOpacity={hasExtras ? 0.7 : 1}
+                  onPress={() => hasExtras && setExpandedEntry(isExpanded ? null : i)}
+                  style={[styles.recentRow, i === recent.length - 1 && { borderBottomWidth: 0 }]}
+                >
                   <View style={styles.recentAvatar}>
                     <Text style={styles.recentAvatarText}>{name[0].toUpperCase()}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Text style={styles.recentText}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.recentText, { flex: 1 }]}>
                         <Text style={styles.recentName}>{name}</Text>
                         <Text style={styles.recentWings}> ate {e.amount} wings</Text>
                       </Text>
-                      <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        {e.photo_url && <Text style={{ fontSize: 12 }}>📷</Text>}
+                        {e.location_name && <Text style={{ fontSize: 12 }}>📍</Text>}
+                        <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                      </View>
                     </View>
-                    {e.location_name && (
-                      <Text style={{ color: '#78716c', fontSize: 11, marginTop: 2 }}>📍 {e.location_name}</Text>
-                    )}
-                    {e.photo_url && (
-                      <Image
-                        source={{ uri: e.photo_url }}
-                        style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
-                        resizeMode="cover"
-                      />
+                    {isExpanded && (
+                      <>
+                        {e.location_name && (
+                          <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
+                        )}
+                        {e.photo_url && (
+                          <Image
+                            source={{ uri: e.photo_url }}
+                            style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
+                            resizeMode="cover"
+                          />
+                        )}
+                      </>
                     )}
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -147,6 +168,7 @@ export default function LeaderboardScreen() {
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [funStats, setFunStats] = useState<FunStats | null>(null);
   const [recent, setRecent] = useState<RecentEntry[]>([]);
+  const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -185,7 +207,7 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';

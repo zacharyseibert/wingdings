@@ -22,6 +22,7 @@ function timeAgo(dateStr: string) {
 
 export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
   const fetchRecent = useCallback(async () => {
@@ -37,7 +38,6 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
   useEffect(() => {
     fetchRecent();
 
-    // Real-time: prepend new entries as they come in
     const channel = supabase
       .channel('activity-feed')
       .on(
@@ -45,7 +45,6 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
         { event: 'INSERT', schema: 'public', table: 'wing_entries' },
         async (payload) => {
           if (payload.new.amount <= 0) return;
-          // Fetch user info for this entry
           const { data: user } = await supabase
             .from('users')
             .select('display_name, username, avatar_url')
@@ -55,6 +54,8 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
             amount: payload.new.amount,
             created_at: payload.new.created_at,
             user_id: payload.new.user_id,
+            photo_url: payload.new.photo_url,
+            location_name: payload.new.location_name,
             users: user ?? { display_name: 'Someone', username: 'someone', avatar_url: null },
           };
           setEntries(prev => [newEntry, ...prev].slice(0, 8));
@@ -62,13 +63,8 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
       )
       .subscribe();
 
-    // Update time-ago labels every 30s
     const ticker = setInterval(() => setTick(t => t + 1), 30_000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(ticker);
-    };
+    return () => { supabase.removeChannel(channel); clearInterval(ticker); };
   }, [fetchRecent]);
 
   if (entries.length === 0) {
@@ -80,36 +76,56 @@ export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-0">
       {entries.map((e, i) => {
         const name = e.users?.display_name || e.users?.username || 'Someone';
+        const hasExtras = !!(e.photo_url || e.location_name);
+        const isExpanded = expanded === i;
+
         return (
-          <li key={i} className="flex items-center gap-3 py-2 border-b border-wing-border last:border-0">
-            {e.users?.avatar_url ? (
-              <img src={e.users.avatar_url} alt="" className="w-8 h-8 rounded-full shrink-0" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-wing-orange/20 flex items-center justify-center text-wing-orange text-sm font-bold shrink-0">
-                {name[0].toUpperCase()}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div>
+          <li
+            key={i}
+            className={`border-b border-wing-border last:border-0 ${hasExtras ? 'cursor-pointer' : ''}`}
+            onClick={() => hasExtras && setExpanded(isExpanded ? null : i)}
+          >
+            <div className="flex items-center gap-3 py-3">
+              {e.users?.avatar_url ? (
+                <img src={e.users.avatar_url} alt="" className="w-8 h-8 rounded-full shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-wing-orange/20 flex items-center justify-center text-wing-orange text-sm font-bold shrink-0">
+                  {name[0].toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
                 <span className="font-medium">{name}</span>
                 <span className="text-stone-400"> ate </span>
                 <span className="text-wing-orange font-bold">{e.amount} wings</span>
                 <span className="text-stone-500 text-xs ml-2">{timeAgo(e.created_at)}</span>
-                {e.location_name && (
-                  <span className="text-stone-500 text-xs ml-2">📍 {e.location_name}</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {e.photo_url && <span className="text-sm">📷</span>}
+                {e.location_name && <span className="text-sm">📍</span>}
+                {hasExtras && (
+                  <span className={`text-stone-500 text-xs transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▾</span>
                 )}
               </div>
-              {e.photo_url && (
-                <img
-                  src={e.photo_url}
-                  alt="wing photo"
-                  className="mt-2 rounded-lg max-h-48 object-cover w-full"
-                />
-              )}
             </div>
+
+            {/* Expanded content */}
+            {isExpanded && (
+              <div className="pb-3 pl-11 space-y-2">
+                {e.location_name && (
+                  <p className="text-stone-400 text-sm">📍 {e.location_name}</p>
+                )}
+                {e.photo_url && (
+                  <img
+                    src={e.photo_url}
+                    alt="wing photo"
+                    className="rounded-xl max-h-64 object-cover w-full"
+                  />
+                )}
+              </div>
+            )}
           </li>
         );
       })}
