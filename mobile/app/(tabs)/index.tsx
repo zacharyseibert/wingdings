@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
 
-const PRESETS = [1, 6, 10, 12];
+const PRESETS = [1, 5, 6, 10, 12];
 
 export default function LogScreen() {
   const [total, setTotal] = useState(0);
@@ -152,7 +152,7 @@ export default function LogScreen() {
             <Text style={styles.sessionLabel}>How many wings did you just eat?</Text>
           </View>
 
-          {/* Quick add + clear */}
+          {/* Quick add */}
           <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>QUICK ADD</Text></View>
           <View style={styles.presets}>
             {PRESETS.map(n => (
@@ -164,8 +164,15 @@ export default function LogScreen() {
                 <Text style={styles.presetText}>+{n}</Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={[styles.preset, styles.clearBtn]} onPress={clearSession}>
-              <Text style={styles.clearBtnText}>Clear</Text>
+          </View>
+
+          {/* Stepper row */}
+          <View style={styles.stepperRow}>
+            <TouchableOpacity style={styles.stepperBtn} onPress={() => addToSession(-1)}>
+              <Text style={styles.stepperText}>−</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.stepperBtn} onPress={() => addToSession(1)}>
+              <Text style={styles.stepperText}>+</Text>
             </TouchableOpacity>
           </View>
 
@@ -286,8 +293,17 @@ const styles = StyleSheet.create({
   },
   presetText: { color: '#E8722A', fontSize: 18, fontWeight: '700' },
 
-  clearBtn: { borderColor: '#7f1d1d' },
-  clearBtnText: { color: '#ef4444', fontSize: 18, fontWeight: '700' },
+  stepperRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  stepperBtn: {
+    flex: 1,
+    backgroundColor: '#2A1A10',
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  stepperText: { color: '#F5E6D3', fontSize: 22, fontWeight: '600' },
 
   // Attach row
   attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
