@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
-  SafeAreaView, RefreshControl, ActivityIndicator, Image,
+  RefreshControl, ActivityIndicator, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderboard } from '../../lib/wings';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -13,10 +14,15 @@ export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const data = await getLeaderboard();
-    setBoard(data);
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      const data = await getLeaderboard();
+      setBoard(data);
+    } catch (err: any) {
+      console.error('[leaderboard]', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -34,7 +40,7 @@ export default function LeaderboardScreen() {
       <FlatList
         data={board}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
         ListHeaderComponent={<Text style={styles.title}>🏆 Leaderboard</Text>}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}

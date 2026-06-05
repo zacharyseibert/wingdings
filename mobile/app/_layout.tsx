@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { Session } from '@supabase/supabase-js';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { ensureProfile } from '../lib/wings';
 import * as Linking from 'expo-linking';
@@ -54,9 +55,11 @@ export default function RootLayout() {
   }, [ready, session]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </SafeAreaProvider>
   );
 }

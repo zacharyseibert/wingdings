@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView,
+  View, Text, StyleSheet,
   TouchableOpacity, Alert, ScrollView, RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats } from '../../lib/wings';
 
@@ -12,13 +13,16 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    setEmail(session.user.email ?? null);
-    const uid = await getMobileUserId(session.user.id);
-    const { user } = await getMyStats(uid);
-    setUser(user);
-    setRefreshing(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      setEmail(session.user.email ?? null);
+      const uid = await getMobileUserId(session.user.id);
+      const { user } = await getMyStats(uid);
+      setUser(user);
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);

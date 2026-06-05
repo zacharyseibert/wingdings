@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, SafeAreaView, TextInput,
+  Alert, ActivityIndicator, TextInput,
   ScrollView, RefreshControl, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
 
@@ -19,13 +20,16 @@ export default function LogScreen() {
   const [showCustom, setShowCustom] = useState(false);
 
   const loadUser = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const uid = await getMobileUserId(session.user.id);
-    setUserId(uid);
-    const { user } = await getMyStats(uid);
-    setTotal(user?.total_wings ?? 0);
-    setRefreshing(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = await getMobileUserId(session.user.id);
+      setUserId(uid);
+      const { user } = await getMyStats(uid);
+      setTotal(user?.total_wings ?? 0);
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { loadUser(); }, [loadUser]);

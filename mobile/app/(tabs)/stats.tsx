@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  SafeAreaView, RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats } from '../../lib/wings';
 
@@ -20,13 +21,18 @@ export default function StatsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const uid = await getMobileUserId(session.user.id);
-    const data = await getMyStats(uid);
-    setStats(data);
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = await getMobileUserId(session.user.id);
+      const data = await getMyStats(uid);
+      setStats(data);
+    } catch (err) {
+      console.error('[stats] error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -44,7 +50,7 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
       >
         <Text style={styles.title}>My Stats</Text>
