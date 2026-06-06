@@ -108,8 +108,8 @@ export default function ProfileScreen() {
         {/* Avatar */}
         <View style={styles.avatarBox}>
           <TouchableOpacity
-            onPress={user?.id?.startsWith('mob_') ? handleEditAvatar : undefined}
-            activeOpacity={user?.id?.startsWith('mob_') ? 0.7 : 1}
+            onPress={true ? handleEditAvatar : undefined}
+            activeOpacity={true ? 0.7 : 1}
             style={{ marginBottom: 12 }}
           >
             {user?.avatar_url ? (
@@ -121,7 +121,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
-            {user?.id?.startsWith('mob_') && (
+            {true && (
               <View style={styles.editBadge}>
                 <Text style={styles.editBadgeText}>{uploadingAvatar ? '...' : '✎'}</Text>
               </View>
@@ -143,7 +143,7 @@ export default function ProfileScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Account type</Text>
           <Text style={styles.infoValue}>
-            {user?.id?.startsWith('mob_') ? 'Mobile only' : 'Linked with Slack ✓'}
+            {true ? 'Mobile only' : 'Linked with Slack ✓'}
           </Text>
         </View>
 
