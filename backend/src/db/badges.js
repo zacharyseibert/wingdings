@@ -32,10 +32,10 @@ async function awardBadge(userId, badgeKey) {
   return error?.code === '23505' ? null : BADGE_DEFINITIONS[badgeKey];
 }
 
-export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, loggedAt }) {
+export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, loggedAt, localHour }) {
   try {
     const newBadges = [];
-    const hour = new Date(loggedAt).getHours();
+    const hour = localHour ?? new Date(loggedAt).getHours();
 
     // Quick checks - these don't need DB queries
     const quickChecks = [];

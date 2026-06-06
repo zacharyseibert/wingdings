@@ -86,7 +86,7 @@ router.post('/mobile/log', async (req, res) => {
 
     if (!profile) return res.status(404).json({ error: 'User profile not found' });
 
-    const { amount, photoUrl, locationName, note } = req.body;
+    const { amount, photoUrl, locationName, note, localHour } = req.body;
     if (!amount || typeof amount !== 'number' || amount <= 0 || amount > 10000) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
@@ -104,6 +104,7 @@ router.post('/mobile/log', async (req, res) => {
       photoUrl: photoUrl ?? null,
       locationName: locationName ?? null,
       loggedAt: new Date().toISOString(),
+      localHour: localHour ?? new Date().getHours(), // Use client's local hour if provided
     }).catch(err => console.error('[badges] error:', err));
 
     sendWingNotification({
