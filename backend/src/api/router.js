@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, getLongestStreak, getRecentActivity, getWingsOverTime, addWings, getUser } from '../db/wings.js';
 import { sendWingNotification } from '../push.js';
+import { checkAndAwardBadges, getUserBadges, getRecentBadgesForUsers } from '../db/badges.js';
 import { supabase } from '../db/client.js';
 
 const router = Router();
@@ -93,13 +94,23 @@ router.post('/mobile/log', async (req, res) => {
     await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null);
     const updated = await getUser(profile.id);
 
+    // Respond immediately
+    res.json({ total_wings: updated.total_wings });
+
+    // Award badges async (fire and forget)
+    checkAndAwardBadges(profile.id, {
+      amount,
+      totalWings: updated.total_wings,
+      photoUrl: photoUrl ?? null,
+      locationName: locationName ?? null,
+      loggedAt: new Date().toISOString(),
+    }).catch(err => console.error('[badges] error:', err));
+
     sendWingNotification({
       loggerUserId: profile.id,
       loggerName: profile.display_name || profile.username,
       amount,
     }).catch(console.error);
-
-    res.json({ total_wings: updated.total_wings });
   } catch (err) {
     console.error('[api] mobile/log error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -127,6 +138,30 @@ router.post('/mobile/token', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[api] mobile/token error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/badges/:userId — get all badges for a user
+router.get('/badges/:userId', async (req, res) => {
+  try {
+    const data = await getUserBadges(req.params.userId);
+    res.json({ data });
+  } catch (err) {
+    console.error('[api] badges error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/badges/recent — get recent badges for multiple users
+router.post('/badges/recent', async (req, res) => {
+  try {
+    const { userIds } = req.body;
+    if (!Array.isArray(userIds)) return res.status(400).json({ error: 'userIds required' });
+    const data = await getRecentBadgesForUsers(userIds);
+    res.json({ data });
+  } catch (err) {
+    console.error('[api] badges/recent error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
