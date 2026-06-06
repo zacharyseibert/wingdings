@@ -111,25 +111,28 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
 }
 
 export async function getMyStats(userId: string) {
-  const [userRes, historyRes] = await Promise.all([
-    supabase.from('users').select('*').eq('id', userId).single(),
-    supabase
-      .from('wing_entries')
-      .select('amount, created_at, photo_url, location_name, note')
-      .eq('user_id', userId)
-      .gt('amount', 0)
-      .order('created_at', { ascending: false })
-      .limit(10),
-  ]);
-  return { user: userRes.data, history: historyRes.data ?? [] };
+  // Simplified: just get user data directly
+  const { data: user } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  const { data: history } = await supabase
+    .from('wing_entries')
+    .select('amount, created_at, photo_url, location_name, note')
+    .eq('user_id', userId)
+    .gt('amount', 0)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  return { user, history: history ?? [] };
 }
 
 export async function getLeaderboard() {
-  const { data } = await supabase
-    .from('users')
-    .select('id, display_name, username, avatar_url, total_wings')
-    .gt('total_wings', 0)
-    .order('total_wings', { ascending: false })
-    .limit(10);
+  // Use API instead of Supabase client (faster)
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10`);
+  if (!res.ok) throw new Error('Failed to fetch leaderboard');
+  const { data } = await res.json();
   return data ?? [];
 }
