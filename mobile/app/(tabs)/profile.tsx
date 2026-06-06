@@ -23,12 +23,12 @@ export default function ProfileScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       setEmail(session.user.email ?? null);
-      const uid = await getMobileUserId(session.user.id);
-      const { user } = await getMyStats(uid);
+
+      const { user } = await getMyStats();
       setUser(user);
 
       // Fetch badges (non-blocking)
-      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/badges/${uid}`)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/badges/${user.id}`)
         .then(res => res.json())
         .then(({ data }) => setBadges(data ?? []))
         .catch(() => {});

@@ -110,23 +110,17 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
   return data.total_wings;
 }
 
-export async function getMyStats(userId: string) {
-  // Simplified: just get user data directly
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+export async function getMyStats() {
+  // Use API endpoint instead of Supabase client (faster)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
 
-  const { data: history } = await supabase
-    .from('wing_entries')
-    .select('amount, created_at, photo_url, location_name, note')
-    .eq('user_id', userId)
-    .gt('amount', 0)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/stats`, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
 
-  return { user, history: history ?? [] };
+  if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
 }
 
 export async function getLeaderboard() {

@@ -117,6 +117,41 @@ router.post('/mobile/log', async (req, res) => {
   }
 });
 
+// GET /api/mobile/stats — get stats for authenticated user
+router.get('/mobile/stats', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+    const [userRes, historyRes] = await Promise.all([
+      supabase.from('users').select('*').eq('id', profile.id).single(),
+      supabase.from('wing_entries')
+        .select('amount, created_at, photo_url, location_name, note')
+        .eq('user_id', profile.id)
+        .gt('amount', 0)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    res.json({ user: userRes.data, history: historyRes.data ?? [] });
+  } catch (err) {
+    console.error('[api] mobile/stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/mobile/token — register push token
 router.post('/mobile/token', async (req, res) => {
   try {

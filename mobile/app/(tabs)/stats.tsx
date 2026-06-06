@@ -24,10 +24,7 @@ export default function StatsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const uid = await getMobileUserId(session.user.id);
-      const data = await getMyStats(uid);
+      const data = await getMyStats();
       setStats(data);
     } catch (err) {
       console.error('[stats] error:', err);
