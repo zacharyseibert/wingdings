@@ -16,6 +16,7 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [badges, setBadges] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -25,6 +26,12 @@ export default function ProfileScreen() {
       const uid = await getMobileUserId(session.user.id);
       const { user } = await getMyStats(uid);
       setUser(user);
+
+      // Fetch badges (non-blocking)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/badges/${uid}`)
+        .then(res => res.json())
+        .then(({ data }) => setBadges(data ?? []))
+        .catch(() => {});
     } finally {
       setRefreshing(false);
     }
@@ -139,6 +146,22 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Badges */}
+        {badges.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>🎖️ Badges ({badges.length})</Text>
+            <View style={styles.badgeGrid}>
+              {badges.map((badge, i) => (
+                <View key={i} style={styles.badgeCard}>
+                  <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
+                  <Text style={styles.badgeName}>{badge.name}</Text>
+                  <Text style={styles.badgeDesc}>{badge.desc}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
         {/* Account type */}
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Account type</Text>
@@ -213,4 +236,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signOutText: { color: '#ef4444', fontSize: 16, fontWeight: '600' },
+
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#F5E6D3', marginBottom: 12, marginTop: 8 },
+  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  badgeCard: {
+    width: '47%',
+    backgroundColor: '#2A1A10',
+    borderWidth: 1,
+    borderColor: '#3D2618',
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+  },
+  badgeEmoji: { fontSize: 36, marginBottom: 8 },
+  badgeName: { fontSize: 14, fontWeight: '600', color: '#F5E6D3', marginBottom: 4, textAlign: 'center' },
+  badgeDesc: { fontSize: 11, color: '#78716c', textAlign: 'center' },
 });

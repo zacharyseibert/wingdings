@@ -179,6 +179,7 @@ export default function LeaderboardScreen() {
   const [recent, setRecent] = useState<RecentEntry[]>([]);
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [userBadges, setUserBadges] = useState<Record<string, any[]>>({});
 
   const load = useCallback(async () => {
     try {
@@ -192,6 +193,19 @@ export default function LeaderboardScreen() {
       if (statsRes) setGlobalStats(statsRes);
       if (funRes) setFunStats(funRes);
       if (recentRes?.data) setRecent(recentRes.data);
+
+      // Fetch recent badges for leaderboard users (non-blocking)
+      if (boardData.length > 0) {
+        const userIds = boardData.map((u: any) => u.id);
+        fetch(`${API_URL}/api/badges/recent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userIds }),
+        })
+          .then(r => r.json())
+          .then(res => setUserBadges(res.data ?? {}))
+          .catch(() => {});
+      }
     } catch (err: any) {
       console.error('[leaderboard]', err);
     } finally {
@@ -222,6 +236,7 @@ export default function LeaderboardScreen() {
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';
           const medal = MEDALS[index] ?? `${index + 1}`;
+          const badges = userBadges[item.id] ?? [];
           return (
             <View style={styles.row}>
               <Text style={styles.medal}>{medal}</Text>
@@ -232,7 +247,16 @@ export default function LeaderboardScreen() {
                   <Text style={styles.avatarText}>{name[0].toUpperCase()}</Text>
                 </View>
               )}
-              <Text style={styles.name} numberOfLines={1}>{name}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name} numberOfLines={1}>{name}</Text>
+                {badges.length > 0 && (
+                  <View style={styles.badgeRow}>
+                    {badges.map((b, i) => (
+                      <Text key={i} style={styles.badgeEmoji}>{b.emoji}</Text>
+                    ))}
+                  </View>
+                )}
+              </View>
               <View style={styles.wingsBox}>
                 <Text style={styles.wingsNumber}>{item.total_wings.toLocaleString()}</Text>
                 <Text style={styles.wingsLabel}>wings</Text>
@@ -304,6 +328,9 @@ const styles = StyleSheet.create({
   wingsBox: { alignItems: 'flex-end' },
   wingsNumber: { color: '#E8722A', fontSize: 20, fontWeight: 'bold' },
   wingsLabel: { color: '#78716c', fontSize: 11 },
+
+  badgeRow: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  badgeEmoji: { fontSize: 14 },
 
   // Recent activity
   recentBox: {
