@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  RefreshControl, ActivityIndicator, Image,
+  RefreshControl, ActivityIndicator, Image, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ImageViewer from '../../components/ImageViewer';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats } from '../../lib/wings';
 
@@ -19,6 +20,7 @@ export default function StatsScreen() {
   const [stats, setStats] = useState<{ user: any; history: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -78,17 +80,20 @@ export default function StatsScreen() {
                   <Text style={styles.rowLocation}>📍 {e.location_name}</Text>
                 )}
                 {e.photo_url && (
-                  <Image
-                    source={{ uri: e.photo_url }}
-                    style={{ width: '100%', height: 140, borderRadius: 10, marginTop: 8 }}
-                    resizeMode="cover"
-                  />
+                  <TouchableOpacity onPress={() => setViewingImage(e.photo_url)}>
+                    <Image
+                      source={{ uri: e.photo_url }}
+                      style={{ width: '100%', height: 140, borderRadius: 10, marginTop: 8 }}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
           ))
         )}
       </ScrollView>
+      <ImageViewer uri={viewingImage} onClose={() => setViewingImage(null)} />
     </SafeAreaView>
   );
 }

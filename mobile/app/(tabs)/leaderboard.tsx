@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderboard } from '../../lib/wings';
+import ImageViewer from '../../components/ImageViewer';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -48,12 +49,13 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry }: {
+function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry, onViewImage }: {
   globalStats: GlobalStats | null;
   funStats: FunStats | null;
   recent: RecentEntry[];
   expandedEntry: number | null;
   setExpandedEntry: (i: number | null) => void;
+  onViewImage: (uri: string) => void;
 }) {
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
@@ -145,11 +147,13 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
                           <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
                         )}
                         {e.photo_url && (
-                          <Image
-                            source={{ uri: e.photo_url }}
-                            style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
-                            resizeMode="cover"
-                          />
+                          <TouchableOpacity onPress={() => onViewImage(e.photo_url!)}>
+                            <Image
+                              source={{ uri: e.photo_url }}
+                              style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
+                              resizeMode="cover"
+                            />
+                          </TouchableOpacity>
                         )}
                       </>
                     )}
@@ -174,6 +178,7 @@ export default function LeaderboardScreen() {
   const [funStats, setFunStats] = useState<FunStats | null>(null);
   const [recent, setRecent] = useState<RecentEntry[]>([]);
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -212,7 +217,7 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';
@@ -236,6 +241,7 @@ export default function LeaderboardScreen() {
           );
         }}
       />
+      <ImageViewer uri={viewingImage} onClose={() => setViewingImage(null)} />
     </SafeAreaView>
   );
 }
