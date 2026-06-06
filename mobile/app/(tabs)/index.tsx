@@ -10,6 +10,7 @@ import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
+import BadgeCelebration from '../../components/BadgeCelebration';
 
 const PRESETS = [1, 5, 6, 10, 12];
 
@@ -23,6 +24,7 @@ export default function LogScreen() {
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [note, setNote] = useState('');
+  const [newBadges, setNewBadges] = useState<any[]>([]);
 
   const loadUser = useCallback(async () => {
     try {
@@ -49,6 +51,7 @@ export default function LogScreen() {
     setPhotoUri(null);
     setLocationName(null);
     setNote('');
+    setNewBadges([]);
   }
 
 
@@ -101,15 +104,20 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const newTotal = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined);
-      setTotal(newTotal);
+      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined);
+      setTotal(result.total_wings);
       setSession(0);
       setPhotoUri(null);
       setLocationName(null);
       setNote('');
       setFlash(true);
       setTimeout(() => setFlash(false), 800);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      if (result.newBadges.length > 0) {
+        setNewBadges(result.newBadges);
+      } else {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     } catch (err: any) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message ?? 'Something went wrong');
@@ -248,6 +256,8 @@ export default function LogScreen() {
         onSelect={(name) => setLocationName(name)}
         onClose={() => setShowLocationPicker(false)}
       />
+
+      <BadgeCelebration badges={newBadges} onClose={() => setNewBadges([])} />
     </SafeAreaView>
   );
 }

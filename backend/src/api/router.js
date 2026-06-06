@@ -94,18 +94,17 @@ router.post('/mobile/log', async (req, res) => {
     await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null);
     const updated = await getUser(profile.id);
 
-    // Respond immediately
-    res.json({ total_wings: updated.total_wings });
-
-    // Award badges async (fire and forget)
-    checkAndAwardBadges(profile.id, {
+    // Award badges (fast now with optimized queries)
+    const newBadges = await checkAndAwardBadges(profile.id, {
       amount,
       totalWings: updated.total_wings,
       photoUrl: photoUrl ?? null,
       locationName: locationName ?? null,
       loggedAt: new Date().toISOString(),
-      localHour: localHour ?? new Date().getHours(), // Use client's local hour if provided
-    }).catch(err => console.error('[badges] error:', err));
+      localHour: localHour ?? new Date().getHours(),
+    });
+
+    res.json({ total_wings: updated.total_wings, newBadges });
 
     sendWingNotification({
       loggerUserId: profile.id,

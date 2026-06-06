@@ -113,7 +113,7 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
   }
 
   const data = await res.json();
-  return data.total_wings;
+  return { total_wings: data.total_wings, newBadges: data.newBadges ?? [] };
 }
 
 export async function getMyStats() {
