@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet,
+  View, Text, StyleSheet, Image,
   TouchableOpacity, Alert, ScrollView, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,16 +48,17 @@ export default function ProfileScreen() {
       >
         <Text style={styles.title}>Profile</Text>
 
-        {/* Avatar placeholder */}
+        {/* Avatar */}
         <View style={styles.avatarBox}>
-          {user?.avatar_url
-            ? null
-            : <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {(user?.display_name || email || '?')[0].toUpperCase()}
-                </Text>
-              </View>
-          }
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {(user?.display_name || email || '?')[0].toUpperCase()}
+              </Text>
+            </View>
+          )}
           <Text style={styles.name}>{user?.display_name || user?.username || '—'}</Text>
           <Text style={styles.emailText}>{email}</Text>
         </View>
@@ -91,6 +92,10 @@ const styles = StyleSheet.create({
   scroll: { padding: 24 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 28 },
   avatarBox: { alignItems: 'center', marginBottom: 32 },
+  avatarImage: {
+    width: 80, height: 80, borderRadius: 40,
+    marginBottom: 12,
+  },
   avatar: {
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: '#E8722A',
