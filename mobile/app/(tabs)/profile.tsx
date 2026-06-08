@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats, joinCompetition, leaveCompetition } from '../../lib/wings';
+import { ALL_BADGES } from '../../lib/badges';
 
 export default function ProfileScreen() {
   const [email, setEmail] = useState<string | null>(null);
@@ -187,20 +188,20 @@ export default function ProfileScreen() {
         </View>
 
         {/* Badges */}
-        {badges.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>🎖️ Badges ({badges.length})</Text>
-            <View style={styles.badgeGrid}>
-              {badges.map((badge, i) => (
-                <View key={i} style={styles.badgeCard}>
-                  <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
-                  <Text style={styles.badgeName}>{badge.name}</Text>
-                  <Text style={styles.badgeDesc}>{badge.desc}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+        <Text style={styles.sectionTitle}>🎖️ Badges ({badges.length}/{ALL_BADGES.length})</Text>
+        <View style={styles.badgeGrid}>
+          {ALL_BADGES.map((badgeDef) => {
+            const earned = badges.find(b => b.key === badgeDef.key);
+            const isEarned = !!earned;
+            return (
+              <View key={badgeDef.key} style={[styles.badgeCard, !isEarned && styles.badgeCardLocked]}>
+                <Text style={[styles.badgeEmoji, !isEarned && styles.badgeEmojiLocked]}>{badgeDef.emoji}</Text>
+                <Text style={[styles.badgeName, !isEarned && styles.badgeNameLocked]}>{badgeDef.name}</Text>
+                <Text style={[styles.badgeDesc, !isEarned && styles.badgeDescLocked]}>{badgeDef.desc}</Text>
+              </View>
+            );
+          })}
+        </View>
 
         {/* Competition */}
         <Text style={styles.sectionTitle}>🏆 Competition</Text>
@@ -309,6 +310,18 @@ const styles = StyleSheet.create({
   badgeEmoji: { fontSize: 36, marginBottom: 8 },
   badgeName: { fontSize: 14, fontWeight: '600', color: '#F5E6D3', marginBottom: 4, textAlign: 'center' },
   badgeDesc: { fontSize: 11, color: '#78716c', textAlign: 'center' },
+  badgeCardLocked: {
+    opacity: 0.3,
+  },
+  badgeEmojiLocked: {
+    opacity: 0.5,
+  },
+  badgeNameLocked: {
+    color: '#78716c',
+  },
+  badgeDescLocked: {
+    color: '#57534e',
+  },
   competitionBox: {
     backgroundColor: '#2A1A10',
     borderWidth: 1,

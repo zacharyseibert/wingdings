@@ -81,31 +81,6 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
         </View>
       </View>
 
-      {/* Records */}
-      <Text style={styles.sectionTitle}>📈 Records</Text>
-      <View style={styles.recordsRow}>
-        <StatCard
-          emoji="💥"
-          label="Biggest Session"
-          value={funStats?.biggestSession ? `${funStats.biggestSession.amount}` : '—'}
-          sub={funStats?.biggestSession
-            ? `${funStats.biggestSession.users?.display_name || funStats.biggestSession.users?.username} wings`
-            : undefined}
-        />
-        <StatCard
-          emoji="📅"
-          label="Most Active Day"
-          value={funStats?.mostActiveDay?.day ?? '—'}
-          sub={funStats?.mostActiveDay ? `${funStats.mostActiveDay.total} wings` : undefined}
-        />
-        <StatCard
-          emoji="🔥"
-          label="Longest Streak"
-          value={funStats?.longestStreak ? `${funStats.longestStreak.streak}d` : '—'}
-          sub={funStats?.longestStreak?.name ?? undefined}
-        />
-      </View>
-
       {/* Recent activity */}
       {recent.length > 0 && (
         <>
@@ -164,6 +139,31 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
           </View>
         </>
       )}
+
+      {/* Records */}
+      <Text style={styles.sectionTitle}>📈 Records</Text>
+      <View style={styles.recordsRow}>
+        <StatCard
+          emoji="💥"
+          label="Biggest Session"
+          value={funStats?.biggestSession ? `${funStats.biggestSession.amount}` : '—'}
+          sub={funStats?.biggestSession
+            ? `${funStats.biggestSession.users?.display_name || funStats.biggestSession.users?.username} wings`
+            : undefined}
+        />
+        <StatCard
+          emoji="📅"
+          label="Most Active Day"
+          value={funStats?.mostActiveDay?.day ?? '—'}
+          sub={funStats?.mostActiveDay ? `${funStats.mostActiveDay.total} wings` : undefined}
+        />
+        <StatCard
+          emoji="🔥"
+          label="Longest Streak"
+          value={funStats?.longestStreak ? `${funStats.longestStreak.streak}d` : '—'}
+          sub={funStats?.longestStreak?.name ?? undefined}
+        />
+      </View>
 
       <Text style={styles.sectionTitle}>🥇 Top 10</Text>
     </View>
