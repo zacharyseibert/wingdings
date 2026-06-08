@@ -1,5 +1,6 @@
 import { upsertUser, addWings, getUser } from '../../db/wings.js';
 import { sendWingNotification } from '../../push.js';
+import { checkAndAwardBadges } from '../../db/badges.js';
 
 export async function handleAdd(args, body, client, respond) {
   const amount = parseInt(args[0], 10);
@@ -28,13 +29,31 @@ export async function handleAdd(args, body, client, respond) {
   await addWings(user_id, amount);
 
   const user = await getUser(user_id);
+
+  // Check for new badges
+  const newBadges = await checkAndAwardBadges(user_id, {
+    amount,
+    totalWings: user.total_wings,
+    photoUrl: null,
+    locationName: null,
+    loggedAt: new Date().toISOString(),
+    localHour: new Date().getHours(),
+  });
+
   const emoji = amount >= 20 ? '🍗🔥' : '🍗';
+  let message = `${emoji} *${displayName}* just crushed *${amount} wing${amount === 1 ? '' : 's'}*! Their total: *${user.total_wings}* 🏆`;
+
+  // Add badge announcements
+  if (newBadges.length > 0) {
+    const badgeText = newBadges.map(b => `${b.emoji} *${b.name}*`).join(', ');
+    message += `\n🎉 New badge${newBadges.length > 1 ? 's' : ''}: ${badgeText}`;
+  }
 
   // Send push notifications to everyone else (non-blocking)
   sendWingNotification({ loggerUserId: user_id, loggerName: displayName, amount }).catch(console.error);
 
   return respond({
     response_type: 'in_channel',
-    text: `${emoji} *${displayName}* just crushed *${amount} wing${amount === 1 ? '' : 's'}*! Their total: *${user.total_wings}* 🏆`,
+    text: message,
   });
 }

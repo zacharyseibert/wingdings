@@ -3,6 +3,7 @@ import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, ge
 import { sendWingNotification } from '../push.js';
 import { checkAndAwardBadges, getUserBadges, getRecentBadgesForUsers } from '../db/badges.js';
 import { supabase } from '../db/client.js';
+import { announceBadgesToSlack } from '../slack/announce.js';
 
 const router = Router();
 
@@ -105,6 +106,15 @@ router.post('/mobile/log', async (req, res) => {
     });
 
     res.json({ total_wings: updated.total_wings, newBadges });
+
+    // Announce badges to Slack (non-blocking)
+    if (newBadges.length > 0) {
+      announceBadgesToSlack(
+        profile.id,
+        profile.display_name || profile.username,
+        newBadges
+      ).catch(console.error);
+    }
 
     sendWingNotification({
       loggerUserId: profile.id,
