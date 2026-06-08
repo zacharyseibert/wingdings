@@ -134,10 +134,54 @@ export async function getMyStats() {
   return data;
 }
 
-export async function getLeaderboard() {
+export async function getLeaderboard(competitionId?: number | null) {
   // Use API instead of Supabase client (faster)
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10`);
+  const url = competitionId
+    ? `${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10&competitionId=${competitionId}`
+    : `${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   const { data } = await res.json();
   return data ?? [];
+}
+
+export async function joinCompetition(code: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
+
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to join competition');
+  }
+
+  const { competition } = await res.json();
+  return competition;
+}
+
+export async function leaveCompetition() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
+
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/leave`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to leave competition');
+  }
+
+  return true;
 }

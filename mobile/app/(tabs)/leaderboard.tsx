@@ -4,7 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Image, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getLeaderboard } from '../../lib/wings';
+import { getLeaderboard, getMyStats } from '../../lib/wings';
 import ImageViewer from '../../components/ImageViewer';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -170,6 +170,15 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
   );
 }
 
+function CompetitionBanner({ competition }: { competition: any }) {
+  if (!competition) return null;
+  return (
+    <View style={styles.competitionBanner}>
+      <Text style={styles.competitionText}>🏆 {competition.name}</Text>
+    </View>
+  );
+}
+
 export default function LeaderboardScreen() {
   const [board, setBoard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,11 +189,17 @@ export default function LeaderboardScreen() {
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [userBadges, setUserBadges] = useState<Record<string, any[]>>({});
+  const [competition, setCompetition] = useState<any>(null);
 
   const load = useCallback(async () => {
     try {
+      // Get user's competition first
+      const myStats = await getMyStats().catch(() => ({ competition: null }));
+      const competitionId = myStats.competition?.id ?? null;
+      setCompetition(myStats.competition);
+
       const [boardData, statsRes, funRes, recentRes] = await Promise.all([
-        getLeaderboard(),
+        getLeaderboard(competitionId),
         fetch(`${API_URL}/api/stats`).then(r => r.json()).catch(() => null),
         fetch(`${API_URL}/api/fun-stats`).then(r => r.json()).catch(() => null),
         fetch(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
@@ -226,6 +241,7 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CompetitionBanner competition={competition} />
       <FlatList
         data={board}
         keyExtractor={item => item.id}
@@ -360,4 +376,17 @@ const styles = StyleSheet.create({
   recentName: { color: '#F5E6D3', fontWeight: '600', fontSize: 14 },
   recentWings: { color: '#E8722A', fontSize: 14 },
   recentTime: { color: '#78716c', fontSize: 12 },
+  competitionBanner: {
+    backgroundColor: '#2A1A10',
+    borderBottomWidth: 2,
+    borderBottomColor: '#E8722A',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  competitionText: {
+    color: '#F5E6D3',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

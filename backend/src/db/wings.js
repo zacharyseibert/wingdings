@@ -96,11 +96,18 @@ export async function getUser(userId) {
   return data;
 }
 
-export async function getLeaderboard(limit = 10) {
-  const { data, error } = await supabase
+export async function getLeaderboard(limit = 10, competitionId = null) {
+  let query = supabase
     .from('users')
-    .select('id, display_name, username, avatar_url, total_wings, updated_at')
-    .gt('total_wings', 0)
+    .select('id, display_name, username, avatar_url, total_wings, updated_at, competition_id')
+    .gt('total_wings', 0);
+
+  // Filter by competition if specified
+  if (competitionId !== null) {
+    query = query.eq('competition_id', competitionId);
+  }
+
+  const { data, error } = await query
     .order('total_wings', { ascending: false })
     .limit(limit);
   if (error) throw error;

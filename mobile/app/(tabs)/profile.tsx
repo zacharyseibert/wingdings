@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { supabase } from '../../lib/supabase';
-import { getMobileUserId, getMyStats } from '../../lib/wings';
+import { getMobileUserId, getMyStats, joinCompetition, leaveCompetition } from '../../lib/wings';
 
 export default function ProfileScreen() {
   const [email, setEmail] = useState<string | null>(null);
@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [badges, setBadges] = useState<any[]>([]);
+  const [competition, setCompetition] = useState<any>(null);
 
   const load = useCallback(async () => {
     try {
@@ -24,11 +25,12 @@ export default function ProfileScreen() {
       if (!session) return;
       setEmail(session.user.email ?? null);
 
-      const { user } = await getMyStats();
-      setUser(user);
+      const stats = await getMyStats();
+      setUser(stats.user);
+      setCompetition(stats.competition);
 
       // Fetch badges (non-blocking)
-      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/badges/${user.id}`)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/badges/${stats.user.id}`)
         .then(res => res.json())
         .then(({ data }) => setBadges(data ?? []))
         .catch(() => {});
@@ -91,6 +93,44 @@ export default function ProfileScreen() {
     } finally {
       setUploadingAvatar(false);
     }
+  }
+
+  async function handleJoinCompetition() {
+    Alert.prompt(
+      'Join Competition',
+      'Enter the competition code:',
+      async (code) => {
+        if (!code) return;
+        try {
+          const comp = await joinCompetition(code);
+          setCompetition(comp);
+          Alert.alert('Success!', `You joined ${comp.name}`);
+          load();
+        } catch (err: any) {
+          Alert.alert('Error', err.message || 'Invalid competition code');
+        }
+      }
+    );
+  }
+
+  async function handleLeaveCompetition() {
+    Alert.alert(
+      'Leave Competition',
+      `Leave ${competition?.name}? You'll return to the global leaderboard.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Leave', style: 'destructive', onPress: async () => {
+          try {
+            await leaveCompetition();
+            setCompetition(null);
+            Alert.alert('Left competition', 'You\'re now on the global leaderboard');
+            load();
+          } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to leave competition');
+          }
+        }},
+      ]
+    );
   }
 
   async function handleSignOut() {
@@ -160,6 +200,24 @@ export default function ProfileScreen() {
               ))}
             </View>
           </>
+        )}
+
+        {/* Competition */}
+        <Text style={styles.sectionTitle}>🏆 Competition</Text>
+        {competition ? (
+          <View style={styles.competitionBox}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.competitionName}>{competition.name}</Text>
+              <Text style={styles.competitionCode}>Code: {competition.code}</Text>
+            </View>
+            <TouchableOpacity onPress={handleLeaveCompetition}>
+              <Text style={styles.leaveButton}>Leave</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.joinButton} onPress={handleJoinCompetition}>
+            <Text style={styles.joinButtonText}>Join Competition</Text>
+          </TouchableOpacity>
         )}
 
         {/* Account type */}
@@ -251,4 +309,25 @@ const styles = StyleSheet.create({
   badgeEmoji: { fontSize: 36, marginBottom: 8 },
   badgeName: { fontSize: 14, fontWeight: '600', color: '#F5E6D3', marginBottom: 4, textAlign: 'center' },
   badgeDesc: { fontSize: 11, color: '#78716c', textAlign: 'center' },
+  competitionBox: {
+    backgroundColor: '#2A1A10',
+    borderWidth: 1,
+    borderColor: '#E8722A',
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  competitionName: { fontSize: 16, fontWeight: '600', color: '#F5E6D3', marginBottom: 4 },
+  competitionCode: { fontSize: 12, color: '#78716c' },
+  leaveButton: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  joinButton: {
+    backgroundColor: '#E8722A',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  joinButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

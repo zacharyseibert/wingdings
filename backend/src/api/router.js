@@ -4,14 +4,16 @@ import { sendWingNotification } from '../push.js';
 import { checkAndAwardBadges, getUserBadges, getRecentBadgesForUsers } from '../db/badges.js';
 import { supabase } from '../db/client.js';
 import { announceBadgesToSlack } from '../slack/announce.js';
+import { joinCompetition, leaveCompetition, getCompetition } from '../db/competitions.js';
 
 const router = Router();
 
-// GET /api/leaderboard?limit=10
+// GET /api/leaderboard?limit=10&competitionId=123
 router.get('/leaderboard', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
-    const data = await getLeaderboard(limit);
+    const competitionId = req.query.competitionId ? parseInt(req.query.competitionId, 10) : null;
+    const data = await getLeaderboard(limit, competitionId);
     res.json({ data });
   } catch (err) {
     console.error('[api] leaderboard error:', err);
@@ -155,7 +157,13 @@ router.get('/mobile/stats', async (req, res) => {
         .limit(10),
     ]);
 
-    res.json({ user: userRes.data, history: historyRes.data ?? [] });
+    // Get competition info if user is in one
+    let competition = null;
+    if (userRes.data?.competition_id) {
+      competition = await getCompetition(userRes.data.competition_id);
+    }
+
+    res.json({ user: userRes.data, history: historyRes.data ?? [], competition });
   } catch (err) {
     console.error('[api] mobile/stats error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -207,6 +215,64 @@ router.post('/badges/recent', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[api] badges/recent error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/competition/join — join a competition with code
+router.post('/mobile/competition/join', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code required' });
+
+    const competition = await joinCompetition(profile.id, code.toUpperCase().trim());
+    res.json({ competition });
+  } catch (err) {
+    console.error('[api] mobile/competition/join error:', err);
+    if (err.message === 'Invalid competition code') {
+      return res.status(404).json({ error: 'Invalid competition code' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/competition/leave — leave current competition
+router.post('/mobile/competition/leave', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (!profile) return res.status(404).json({ error: 'User profile not found' });
+
+    await leaveCompetition(profile.id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[api] mobile/competition/leave error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
