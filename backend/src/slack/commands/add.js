@@ -1,6 +1,8 @@
 import { upsertUser, addWings, getUser } from '../../db/wings.js';
 import { sendWingNotification } from '../../push.js';
 import { checkAndAwardBadges } from '../../db/badges.js';
+import { getCompetitionByCode } from '../../db/competitions.js';
+import { supabase } from '../../db/client.js';
 
 export async function handleAdd(args, body, client, respond) {
   const amount = parseInt(args[0], 10);
@@ -26,6 +28,17 @@ export async function handleAdd(args, body, client, respond) {
   } catch (_) { /* non-fatal */ }
 
   await upsertUser({ id: user_id, username: user_name, display_name: displayName, avatar_url: avatarUrl, email });
+
+  // Ensure Slack users are in HWFFL competition
+  const hwffl = await getCompetitionByCode('HWFFL-2026');
+  if (hwffl) {
+    await supabase
+      .from('users')
+      .update({ competition_id: hwffl.id })
+      .eq('id', user_id)
+      .is('competition_id', null); // Only update if not already in a competition
+  }
+
   await addWings(user_id, amount);
 
   const user = await getUser(user_id);

@@ -1,9 +1,12 @@
 import { getLeaderboard } from '../../db/wings.js';
+import { getCompetitionByCode } from '../../db/competitions.js';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export async function handleLeaderboard(respond) {
-  const board = await getLeaderboard(10);
+  // Only show HWFFL competition leaderboard for Slack
+  const hwffl = await getCompetitionByCode('HWFFL-2026');
+  const board = await getLeaderboard(10, hwffl?.id ?? null);
 
   if (board.length === 0) {
     return respond({ text: '🍗 No wings logged yet — be the first!', response_type: 'ephemeral' });
