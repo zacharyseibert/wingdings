@@ -49,13 +49,9 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry, onViewImage }: {
+function Header({ globalStats, funStats }: {
   globalStats: GlobalStats | null;
   funStats: FunStats | null;
-  recent: RecentEntry[];
-  expandedEntry: number | null;
-  setExpandedEntry: (i: number | null) => void;
-  onViewImage: (uri: string) => void;
 }) {
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
@@ -80,65 +76,6 @@ function Header({ globalStats, funStats, recent, expandedEntry, setExpandedEntry
           <Text style={styles.globalLabel}>📊 Per Person</Text>
         </View>
       </View>
-
-      {/* Recent activity */}
-      {recent.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>⚡ Recent Activity</Text>
-          <View style={styles.recentBox}>
-            {recent.map((e, i) => {
-              const name = e.users?.display_name || e.users?.username || 'Someone';
-              const hasExtras = !!(e.photo_url || e.location_name || e.note);
-              const isExpanded = expandedEntry === i;
-              return (
-                <TouchableOpacity
-                  key={i}
-                  activeOpacity={hasExtras ? 0.7 : 1}
-                  onPress={() => hasExtras && setExpandedEntry(isExpanded ? null : i)}
-                  style={[styles.recentRow, i === recent.length - 1 && { borderBottomWidth: 0 }]}
-                >
-                  <View style={styles.recentAvatar}>
-                    <Text style={styles.recentAvatarText}>{name[0].toUpperCase()}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={[styles.recentText, { flex: 1 }]}>
-                        <Text style={styles.recentName}>{name}</Text>
-                        <Text style={styles.recentWings}> ate {e.amount} wings</Text>
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        {e.note && <Text style={{ fontSize: 12 }}>💬</Text>}
-                        {e.photo_url && <Text style={{ fontSize: 12 }}>📷</Text>}
-                        {e.location_name && <Text style={{ fontSize: 12 }}>📍</Text>}
-                        <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
-                      </View>
-                    </View>
-                    {isExpanded && (
-                      <>
-                        {e.note && (
-                          <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>
-                        )}
-                        {e.location_name && (
-                          <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
-                        )}
-                        {e.photo_url && (
-                          <TouchableOpacity onPress={() => onViewImage(e.photo_url!)}>
-                            <Image
-                              source={{ uri: e.photo_url }}
-                              style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
-                              resizeMode="cover"
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </>
-      )}
 
       {/* Records */}
       <Text style={styles.sectionTitle}>📈 Records</Text>
@@ -176,6 +113,73 @@ function CompetitionBanner({ competition }: { competition: any }) {
     <View style={styles.competitionBanner}>
       <Text style={styles.competitionText}>🏆 {competition.name}</Text>
     </View>
+  );
+}
+
+function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage }: {
+  recent: RecentEntry[];
+  expandedEntry: number | null;
+  setExpandedEntry: (i: number | null) => void;
+  onViewImage: (uri: string) => void;
+}) {
+  if (recent.length === 0) return null;
+
+  return (
+    <>
+      <Text style={styles.sectionTitle}>⚡ Recent Activity</Text>
+      <View style={styles.recentBox}>
+        {recent.map((e, i) => {
+          const name = e.users?.display_name || e.users?.username || 'Someone';
+          const hasExtras = !!(e.photo_url || e.location_name || e.note);
+          const isExpanded = expandedEntry === i;
+          return (
+            <TouchableOpacity
+              key={i}
+              activeOpacity={hasExtras ? 0.7 : 1}
+              onPress={() => hasExtras && setExpandedEntry(isExpanded ? null : i)}
+              style={[styles.recentRow, i === recent.length - 1 && { borderBottomWidth: 0 }]}
+            >
+              <View style={styles.recentAvatar}>
+                <Text style={styles.recentAvatarText}>{name[0].toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.recentText, { flex: 1 }]}>
+                    <Text style={styles.recentName}>{name}</Text>
+                    <Text style={styles.recentWings}> ate {e.amount} wings</Text>
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    {e.note && <Text style={{ fontSize: 12 }}>💬</Text>}
+                    {e.photo_url && <Text style={{ fontSize: 12 }}>📷</Text>}
+                    {e.location_name && <Text style={{ fontSize: 12 }}>📍</Text>}
+                    <Text style={styles.recentTime}>{timeAgo(e.created_at)}</Text>
+                  </View>
+                </View>
+                {isExpanded && (
+                  <>
+                    {e.note && (
+                      <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>
+                    )}
+                    {e.location_name && (
+                      <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
+                    )}
+                    {e.photo_url && (
+                      <TouchableOpacity onPress={() => onViewImage(e.photo_url!)}>
+                        <Image
+                          source={{ uri: e.photo_url }}
+                          style={{ width: '100%', height: 160, borderRadius: 10, marginTop: 8 }}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </>
   );
 }
 
@@ -247,7 +251,8 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} />}
+        ListFooterComponent={<Footer recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
           const name = item.display_name || item.username || 'Unknown';
