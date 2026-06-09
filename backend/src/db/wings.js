@@ -125,21 +125,31 @@ export async function getHistory(userId, limit = 10) {
   return data;
 }
 
-export async function getGlobalStats() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('total_wings');
+export async function getGlobalStats(competitionId = null) {
+  let query = supabase.from('users').select('total_wings, competition_id');
+
+  if (competitionId !== null) {
+    query = query.eq('competition_id', competitionId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   const total = data.reduce((sum, u) => sum + u.total_wings, 0);
   const participants = data.filter(u => u.total_wings > 0).length;
   return { total, participants };
 }
 
-export async function getBiggestSession() {
-  const { data, error } = await supabase
+export async function getBiggestSession(competitionId = null) {
+  let query = supabase
     .from('wing_entries')
-    .select('amount, created_at, user_id, users(display_name, username, avatar_url)')
-    .gt('amount', 0)
+    .select('amount, created_at, user_id, users(display_name, username, avatar_url, competition_id)')
+    .gt('amount', 0);
+
+  if (competitionId !== null) {
+    query = query.eq('users.competition_id', competitionId);
+  }
+
+  const { data, error } = await query
     .order('amount', { ascending: false })
     .limit(1)
     .single();
@@ -147,16 +157,23 @@ export async function getBiggestSession() {
   return data;
 }
 
-export async function getMostActiveDay() {
-  const { data, error } = await supabase
+export async function getMostActiveDay(competitionId = null) {
+  let query = supabase
     .from('wing_entries')
-    .select('created_at, amount')
+    .select('created_at, amount, users(competition_id)')
     .gt('amount', 0);
+
+  const { data, error } = await query;
   if (error) throw error;
+
+  // Filter by competition if needed
+  const filtered = competitionId !== null
+    ? data.filter(e => e.users?.competition_id === competitionId)
+    : data;
 
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const totals = Array(7).fill(0);
-  for (const e of data) {
+  for (const e of filtered) {
     totals[new Date(e.created_at).getDay()] += e.amount;
   }
   const max = Math.max(...totals);
@@ -164,17 +181,24 @@ export async function getMostActiveDay() {
   return { day: days[totals.indexOf(max)], total: max };
 }
 
-export async function getLongestStreak() {
-  const { data, error } = await supabase
+export async function getLongestStreak(competitionId = null) {
+  let query = supabase
     .from('wing_entries')
-    .select('user_id, created_at, users(display_name, username)')
+    .select('user_id, created_at, users(display_name, username, competition_id)')
     .gt('amount', 0)
     .order('created_at', { ascending: true });
+
+  const { data, error } = await query;
   if (error) throw error;
+
+  // Filter by competition if needed
+  const filtered = competitionId !== null
+    ? data.filter(e => e.users?.competition_id === competitionId)
+    : data;
 
   // Group dates by user
   const byUser = {};
-  for (const e of data) {
+  for (const e of filtered) {
     const uid = e.user_id;
     const date = new Date(e.created_at).toISOString().slice(0, 10);
     if (!byUser[uid]) byUser[uid] = { name: e.users?.display_name || e.users?.username, dates: new Set() };

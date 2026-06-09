@@ -7,20 +7,23 @@ interface GlobalStats {
   participants: number;
 }
 
-export default function StatsBar({ apiUrl }: { apiUrl: string }) {
+export default function StatsBar({ apiUrl, competitionId }: { apiUrl: string; competitionId?: number | null }) {
   const [stats, setStats] = useState<GlobalStats | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${apiUrl}/api/stats`);
+        const url = competitionId !== null && competitionId !== undefined
+          ? `${apiUrl}/api/stats?competitionId=${competitionId}`
+          : `${apiUrl}/api/stats`;
+        const res = await fetch(url);
         if (res.ok) setStats(await res.json());
       } catch { /* non-fatal */ }
     }
     load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
-  }, [apiUrl]);
+  }, [apiUrl, competitionId]);
 
   const cards = [
     { label: 'Total Wings Eaten', value: stats ? stats.total.toLocaleString() : '—', emoji: '🍗' },

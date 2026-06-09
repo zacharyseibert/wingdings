@@ -23,20 +23,23 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-export default function FunStats({ apiUrl }: { apiUrl: string }) {
+export default function FunStats({ apiUrl, competitionId }: { apiUrl: string; competitionId?: number | null }) {
   const [stats, setStats] = useState<FunStatsData | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${apiUrl}/api/fun-stats`);
+        const url = competitionId !== null && competitionId !== undefined
+          ? `${apiUrl}/api/fun-stats?competitionId=${competitionId}`
+          : `${apiUrl}/api/fun-stats`;
+        const res = await fetch(url);
         if (res.ok) setStats(await res.json());
       } catch { /* non-fatal */ }
     }
     load();
     const interval = setInterval(load, 60_000);
     return () => clearInterval(interval);
-  }, [apiUrl]);
+  }, [apiUrl, competitionId]);
 
   const biggest = stats?.biggestSession;
   const activeDay = stats?.mostActiveDay;

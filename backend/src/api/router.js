@@ -21,10 +21,11 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
-// GET /api/stats
-router.get('/stats', async (_req, res) => {
+// GET /api/stats?competitionId=1
+router.get('/stats', async (req, res) => {
   try {
-    const stats = await getGlobalStats();
+    const competitionId = req.query.competitionId ? parseInt(req.query.competitionId, 10) : null;
+    const stats = await getGlobalStats(competitionId);
     res.json(stats);
   } catch (err) {
     console.error('[api] stats error:', err);
@@ -32,13 +33,14 @@ router.get('/stats', async (_req, res) => {
   }
 });
 
-// GET /api/fun-stats — biggest session, most active day, longest streak
-router.get('/fun-stats', async (_req, res) => {
+// GET /api/fun-stats?competitionId=1 — biggest session, most active day, longest streak
+router.get('/fun-stats', async (req, res) => {
   try {
+    const competitionId = req.query.competitionId ? parseInt(req.query.competitionId, 10) : null;
     const [biggestSession, mostActiveDay, longestStreak] = await Promise.all([
-      getBiggestSession(),
-      getMostActiveDay(),
-      getLongestStreak(),
+      getBiggestSession(competitionId),
+      getMostActiveDay(competitionId),
+      getLongestStreak(competitionId),
     ]);
     res.json({ biggestSession, mostActiveDay, longestStreak });
   } catch (err) {
