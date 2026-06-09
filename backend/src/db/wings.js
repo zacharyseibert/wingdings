@@ -140,21 +140,22 @@ export async function getGlobalStats(competitionId = null) {
 }
 
 export async function getBiggestSession(competitionId = null) {
-  let query = supabase
+  const { data, error } = await supabase
     .from('wing_entries')
     .select('amount, created_at, user_id, users(display_name, username, avatar_url, competition_id)')
-    .gt('amount', 0);
-
-  if (competitionId !== null) {
-    query = query.eq('users.competition_id', competitionId);
-  }
-
-  const { data, error } = await query
+    .gt('amount', 0)
     .order('amount', { ascending: false })
-    .limit(1)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error;
-  return data;
+    .limit(competitionId !== null ? 100 : 1);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+
+  // Filter by competition if needed
+  const filtered = competitionId !== null
+    ? data.filter(e => e.users?.competition_id === competitionId)
+    : data;
+
+  return filtered[0] || null;
 }
 
 export async function getMostActiveDay(competitionId = null) {
