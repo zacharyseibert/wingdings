@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { colors } from '../../lib/colors';
+import { colors } from '../lib/colors';
 
 interface Place {
   id: string;
@@ -119,7 +119,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
             <TextInput
               style={styles.searchInput}
               placeholder="Search or type a location..."
-              placeholderTextColor=colors.textSecondary
+              placeholderTextColor={colors.textSecondary}
               value={search}
               onChangeText={setSearch}
               autoCorrect={false}
@@ -132,7 +132,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
 
           {loading ? (
             <View style={styles.center}>
-              <ActivityIndicator color=colors.primary />
+              <ActivityIndicator color={colors.primary} />
               <Text style={styles.loadingText}>Finding nearby places...</Text>
             </View>
           ) : (

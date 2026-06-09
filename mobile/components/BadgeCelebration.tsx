@@ -2,7 +2,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { colors } from '../../lib/colors';
+import { colors } from '../lib/colors';
 
 interface Badge {
   key: string;
