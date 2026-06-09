@@ -70,10 +70,10 @@ export default function Leaderboard() {
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-16 text-stone-500">
+      <div className="text-center py-16 text-wing-textSecondary">
         <div className="text-6xl mb-4">🍗</div>
         <p>No wings logged yet.</p>
-        <p className="text-sm mt-1">Be the first — use <code className="bg-wing-card px-1 rounded">/wingdings add 6</code> in Slack!</p>
+        <p className="text-sm mt-1">Be the first — use <code className="bg-wing-card border border-wing-border px-1.5 py-0.5 rounded shadow-sm">/wingdings add 6</code> in Slack!</p>
       </div>
     );
   }
@@ -88,34 +88,34 @@ export default function Leaderboard() {
         return (
           <li
             key={user.id}
-            className={`flex items-center gap-4 rounded-xl p-4 border transition-all duration-500 ${
+            className={`flex items-center gap-4 rounded-xl p-4 border transition-all duration-500 shadow-sm ${
               isFlashing
-                ? 'border-wing-orange bg-wing-orange/20 scale-[1.01]'
+                ? 'border-wing-primary bg-wing-primary/10 scale-[1.01]'
                 : 'border-wing-border bg-wing-card'
             }`}
           >
             <span className="text-2xl w-8 text-center shrink-0">
-              {MEDALS[i] ?? <span className="text-stone-500 text-lg font-bold">{i + 1}</span>}
+              {MEDALS[i] ?? <span className="text-wing-textSecondary text-lg font-bold">{i + 1}</span>}
             </span>
             {user.avatar_url ? (
               <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-wing-orange/30 flex items-center justify-center text-wing-orange font-bold shrink-0">
+              <div className="w-10 h-10 rounded-full bg-wing-primary/20 flex items-center justify-center text-wing-primary font-bold shrink-0">
                 {(user.display_name || user.username || '?')[0].toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="font-semibold truncate">{user.display_name || user.username}</div>
-              <div className="mt-1.5 h-2 rounded-full bg-wing-border overflow-hidden">
+              <div className="font-semibold truncate text-wing-text">{user.display_name || user.username}</div>
+              <div className="mt-1.5 h-2 rounded-full bg-wing-borderLight overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-wing-orange transition-all duration-700"
+                  className="h-full rounded-full bg-wing-primary transition-all duration-700"
                   style={{ width: `${pct}%` }}
                 />
               </div>
             </div>
             <div className="text-right shrink-0">
-              <div className="text-wing-orange font-bold text-xl">{user.total_wings.toLocaleString()}</div>
-              <div className="text-stone-500 text-xs">wings</div>
+              <div className="text-wing-primary font-bold text-xl">{user.total_wings.toLocaleString()}</div>
+              <div className="text-wing-textSecondary text-xs">wings</div>
             </div>
           </li>
         );

@@ -150,7 +150,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { flexGrow: 1 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor=colors.primary />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
       >
         <Text style={styles.title}>Profile</Text>
 

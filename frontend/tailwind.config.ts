@@ -6,10 +6,19 @@ const config: Config = {
     extend: {
       colors: {
         wing: {
-          orange: '#E8722A',
-          dark: '#1A0F0A',
-          card: '#2A1A10',
-          border: '#3D2618',
+          // Modern Minimal palette (matching iOS app)
+          background: '#FAFAFA',
+          card: '#FFFFFF',
+          primary: '#F97316',      // Orange
+          accent: '#8B5CF6',       // Purple
+          success: '#22C55E',      // Green
+          text: '#18181B',         // Charcoal
+          textSecondary: '#71717A', // Gray
+          textLight: '#A1A1AA',    // Light gray
+          border: '#E4E4E7',
+          borderLight: '#F4F4F5',
+          error: '#EF4444',
+          shadow: 'rgba(0, 0, 0, 0.06)',
         },
       },
     },

@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 body {
-  background-color: #1A0F0A;
-  color: #F5E6D3;
+  background-color: #FAFAFA;
+  color: #18181B;
 }
 
 @keyframes pulse-wing {

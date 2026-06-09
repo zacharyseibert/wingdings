@@ -12,10 +12,10 @@ export default function Home() {
       {/* Header */}
       <div className="text-center mb-10">
         <div className="text-7xl mb-3 wing-pulse inline-block">🍗</div>
-        <h1 className="text-4xl font-bold tracking-tight">Wingdings</h1>
-        <p className="text-stone-400 mt-2">Track every wing. Crown every champion.</p>
-        <p className="text-stone-500 text-sm mt-3">
-          Use <code className="bg-wing-card border border-wing-border px-1.5 py-0.5 rounded text-wing-orange">/wingdings</code> in Slack to log your wings.
+        <h1 className="text-4xl font-bold tracking-tight text-wing-text">Wingdings</h1>
+        <p className="text-wing-textSecondary mt-2">Track every wing. Crown every champion.</p>
+        <p className="text-wing-textSecondary text-sm mt-3">
+          Use <code className="bg-wing-card border border-wing-border px-1.5 py-0.5 rounded text-wing-primary shadow-sm">/wingdings</code> in Slack to log your wings.
         </p>
       </div>
 
@@ -24,14 +24,14 @@ export default function Home() {
 
       {/* Fun stats */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">📊 Records</h2>
+        <h2 className="text-xl font-semibold mb-4 text-wing-text">📊 Records</h2>
         <FunStats apiUrl={API_URL} />
       </section>
 
       {/* Wings over time chart */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">📈 Wings Over Time</h2>
-        <div className="bg-wing-card border border-wing-border rounded-xl p-4">
+        <h2 className="text-xl font-semibold mb-4 text-wing-text">📈 Wings Over Time</h2>
+        <div className="bg-wing-card border border-wing-border rounded-xl p-4 shadow-sm">
           <WingsChart apiUrl={API_URL} />
         </div>
       </section>
@@ -39,10 +39,10 @@ export default function Home() {
       {/* Leaderboard + Activity feed side by side on wider screens */}
       <div className="grid grid-cols-1 gap-8">
         <section>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-wing-text">
             <span>🏆</span> Leaderboard
-            <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping inline-block" />
+            <span className="ml-auto text-xs text-wing-success font-normal flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-wing-success rounded-full animate-ping inline-block" />
               Live
             </span>
           </h2>
@@ -50,20 +50,20 @@ export default function Home() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-wing-text">
             <span>⚡</span> Recent Activity
-            <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping inline-block" />
+            <span className="ml-auto text-xs text-wing-success font-normal flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-wing-success rounded-full animate-ping inline-block" />
               Live
             </span>
           </h2>
-          <div className="bg-wing-card border border-wing-border rounded-xl p-4">
+          <div className="bg-wing-card border border-wing-border rounded-xl p-4 shadow-sm">
             <ActivityFeed apiUrl={API_URL} />
           </div>
         </section>
       </div>
 
-      <footer className="mt-12 text-center text-stone-600 text-xs">
+      <footer className="mt-12 text-center text-wing-textSecondary text-xs">
         Wingdings · Built with 🍗 and Slack
       </footer>
     </main>
