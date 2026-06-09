@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderboard, getMyStats } from '../../lib/wings';
 import ImageViewer from '../../components/ImageViewer';
+import { colors } from '../../lib/colors';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -158,10 +159,10 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage }: {
                 {isExpanded && (
                   <>
                     {e.note && (
-                      <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>
                     )}
                     {e.location_name && (
-                      <Text style={{ color: '#78716c', fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>
                     )}
                     {e.photo_url && (
                       <TouchableOpacity onPress={() => onViewImage(e.photo_url!)}>
@@ -238,7 +239,7 @@ export default function LeaderboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#E8722A" style={{ marginTop: 80 }} />
+        <ActivityIndicator color=colors.primary style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
@@ -250,7 +251,7 @@ export default function LeaderboardScreen() {
         data={board}
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor=colors.primary />}
         ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} />}
         ListFooterComponent={<Footer recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
@@ -292,73 +293,88 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A0F0A' },
+  container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 20 },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#F5E6D3', marginBottom: 10, marginTop: 4 },
-  empty: { color: '#78716c', fontSize: 15 },
+  title: { fontSize: 26, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 10, marginTop: 4 },
+  empty: { color: colors.textSecondary, fontSize: 15 },
 
   // Global stats
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   globalCard: {
     flex: 1,
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     padding: 12,
     alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  globalNumber: { fontSize: 22, fontWeight: 'bold', color: '#E8722A' },
-  globalLabel: { color: '#78716c', fontSize: 10, marginTop: 2, textAlign: 'center' },
+  globalNumber: { fontSize: 22, fontWeight: 'bold', color: colors.primary },
+  globalLabel: { color: colors.textSecondary, fontSize: 10, marginTop: 2, textAlign: 'center' },
 
   // Records
   recordsRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   statCard: {
     flex: 1,
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     padding: 10,
     alignItems: 'center',
     gap: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   statEmoji: { fontSize: 20 },
-  statValue: { fontSize: 16, fontWeight: 'bold', color: '#F5E6D3' },
-  statLabel: { color: '#78716c', fontSize: 9, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 },
-  statSub: { color: '#78716c', fontSize: 10, textAlign: 'center' },
+  statValue: { fontSize: 16, fontWeight: 'bold', color: colors.text },
+  statLabel: { color: colors.textSecondary, fontSize: 9, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statSub: { color: colors.textSecondary, fontSize: 10, textAlign: 'center' },
 
   // Leaderboard rows
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     gap: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   medal: { fontSize: 24, width: 32, textAlign: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarPlaceholder: { backgroundColor: '#3D2618', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#E8722A', fontWeight: 'bold', fontSize: 16 },
-  name: { flex: 1, color: '#F5E6D3', fontSize: 16, fontWeight: '500' },
+  avatarPlaceholder: { backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.primary, fontWeight: 'bold', fontSize: 16 },
+  name: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '500' },
   wingsBox: { alignItems: 'flex-end' },
-  wingsNumber: { color: '#E8722A', fontSize: 20, fontWeight: 'bold' },
-  wingsLabel: { color: '#78716c', fontSize: 11 },
+  wingsNumber: { color: colors.primary, fontSize: 20, fontWeight: 'bold' },
+  wingsLabel: { color: colors.textSecondary, fontSize: 11 },
 
   badgeRow: { flexDirection: 'row', gap: 4, marginTop: 4 },
   badgeEmoji: { fontSize: 14 },
 
   // Recent activity
   recentBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     marginBottom: 20,
     overflow: 'hidden',
   },
@@ -367,30 +383,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#3D2618',
+    borderBottomColor: colors.border,
     gap: 10,
   },
   recentAvatar: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#3D2618',
+    backgroundColor: colors.border,
     alignItems: 'center', justifyContent: 'center',
     shrink: 0,
   },
-  recentAvatarText: { color: '#E8722A', fontWeight: 'bold', fontSize: 13 },
+  recentAvatarText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
   recentText: { flex: 1 },
-  recentName: { color: '#F5E6D3', fontWeight: '600', fontSize: 14 },
-  recentWings: { color: '#E8722A', fontSize: 14 },
-  recentTime: { color: '#78716c', fontSize: 12 },
+  recentName: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  recentWings: { color: colors.primary, fontSize: 14 },
+  recentTime: { color: colors.textSecondary, fontSize: 12 },
   competitionBanner: {
-    backgroundColor: '#2A1A10',
-    borderBottomWidth: 2,
-    borderBottomColor: '#E8722A',
-    paddingVertical: 8,
+    backgroundColor: colors.accent,
+    borderBottomWidth: 0,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
   competitionText: {
-    color: '#F5E6D3',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wingdings Color Palette Options</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 40px 20px;
+      background: #f0f0f0;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 40px; color: #111; }
+    .palettes { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
+    .palette { border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .palette-name { padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
+    .phone-mockup { padding: 30px 20px; }
+    .screen { border-radius: 16px; padding: 20px; min-height: 500px; }
+    .screen h2 { margin-bottom: 20px; font-size: 28px; font-weight: bold; }
+    .stats-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    .stat-card { flex: 1; border-radius: 12px; padding: 20px; text-align: center; }
+    .stat-number { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+    .stat-label { font-size: 12px; opacity: 0.7; }
+    .leaderboard-item { border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    .medal { font-size: 20px; }
+    .avatar { width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .name { flex: 1; font-weight: 600; }
+    .wings { font-weight: bold; }
+    .button { border-radius: 12px; padding: 16px; text-align: center; font-weight: 600; font-size: 16px; margin-top: 20px; }
+    .badge-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
+    .badge-card { border-radius: 12px; padding: 16px; text-align: center; }
+    .badge-emoji { font-size: 36px; margin-bottom: 8px; }
+    .badge-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .badge-desc { font-size: 11px; opacity: 0.7; }
+    .section-title { font-size: 16px; font-weight: 600; margin: 20px 0 12px; }
+    .banner { padding: 12px; text-align: center; font-weight: 600; margin: -20px -20px 20px; }
+
+    /* Option 1: Fresh & Bright */
+    .option1 { background: #FFFFFF; }
+    .option1 .palette-name { background: #FF6B35; color: white; }
+    .option1 .screen { background: #FFFFFF; color: #111827; }
+    .option1 .stat-card { background: #F8F9FA; border: 1px solid #E5E7EB; }
+    .option1 .stat-number { color: #FF6B35; }
+    .option1 .leaderboard-item { background: #F8F9FA; border: 1px solid #E5E7EB; }
+    .option1 .avatar { background: #FF6B35; color: white; }
+    .option1 .wings { color: #FF6B35; }
+    .option1 .button { background: #FF6B35; color: white; }
+    .option1 .badge-card { background: #F8F9FA; border: 1px solid #E5E7EB; }
+    .option1 .banner { background: #00B4D8; color: white; }
+
+    /* Option 2: Warm & Inviting */
+    .option2 { background: #FFF8F0; }
+    .option2 .palette-name { background: #FF8C42; color: white; }
+    .option2 .screen { background: #FFF8F0; color: #2D3748; }
+    .option2 .stat-card { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .option2 .stat-number { color: #FF8C42; }
+    .option2 .leaderboard-item { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .option2 .avatar { background: #FF8C42; color: white; }
+    .option2 .wings { color: #FF8C42; }
+    .option2 .button { background: #FF8C42; color: white; }
+    .option2 .badge-card { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .option2 .banner { background: #FFD93D; color: #2D3748; }
+
+    /* Option 3: Modern Minimal */
+    .option3 { background: #FAFAFA; }
+    .option3 .palette-name { background: #F97316; color: white; }
+    .option3 .screen { background: #FAFAFA; color: #18181B; }
+    .option3 .stat-card { background: #FFFFFF; border: 1px solid #E4E4E7; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .option3 .stat-number { color: #F97316; }
+    .option3 .leaderboard-item { background: #FFFFFF; border: 1px solid #E4E4E7; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .option3 .avatar { background: #F97316; color: white; }
+    .option3 .wings { color: #F97316; }
+    .option3 .button { background: #F97316; color: white; }
+    .option3 .badge-card { background: #FFFFFF; border: 1px solid #E4E4E7; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .option3 .banner { background: #8B5CF6; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍗 Wingdings Color Palette Options</h1>
+
+    <div class="palettes">
+      <!-- Option 1 -->
+      <div class="palette option1">
+        <div class="palette-name">Option 1: Fresh & Bright</div>
+        <div class="phone-mockup">
+          <div class="screen">
+            <div class="banner">🏆 HWFFL</div>
+            <h2>🏆 Leaderboard</h2>
+
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-number">1,247</div>
+                <div class="stat-label">🍗 Total Wings</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">👥 Members</div>
+              </div>
+            </div>
+
+            <div class="section-title">🥇 Top 3</div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥇</span>
+              <div class="avatar">Z</div>
+              <span class="name">Zach</span>
+              <span class="wings">425 wings</span>
+            </div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥈</span>
+              <div class="avatar">N</div>
+              <span class="name">Nick</span>
+              <span class="wings">312 wings</span>
+            </div>
+
+            <div class="section-title">🎖️ Badges (3/14)</div>
+
+            <div class="badge-grid">
+              <div class="badge-card">
+                <div class="badge-emoji">🍗</div>
+                <div class="badge-name">First Wing</div>
+                <div class="badge-desc">Logged first wings</div>
+              </div>
+              <div class="badge-card" style="opacity: 0.4;">
+                <div class="badge-emoji">🔟</div>
+                <div class="badge-name">10 Club</div>
+                <div class="badge-desc">Eaten 10 wings</div>
+              </div>
+            </div>
+
+            <div class="button">Log Wings 🍗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 2 -->
+      <div class="palette option2">
+        <div class="palette-name">Option 2: Warm & Inviting</div>
+        <div class="phone-mockup">
+          <div class="screen">
+            <div class="banner">🏆 HWFFL</div>
+            <h2>🏆 Leaderboard</h2>
+
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-number">1,247</div>
+                <div class="stat-label">🍗 Total Wings</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">👥 Members</div>
+              </div>
+            </div>
+
+            <div class="section-title">🥇 Top 3</div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥇</span>
+              <div class="avatar">Z</div>
+              <span class="name">Zach</span>
+              <span class="wings">425 wings</span>
+            </div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥈</span>
+              <div class="avatar">N</div>
+              <span class="name">Nick</span>
+              <span class="wings">312 wings</span>
+            </div>
+
+            <div class="section-title">🎖️ Badges (3/14)</div>
+
+            <div class="badge-grid">
+              <div class="badge-card">
+                <div class="badge-emoji">🍗</div>
+                <div class="badge-name">First Wing</div>
+                <div class="badge-desc">Logged first wings</div>
+              </div>
+              <div class="badge-card" style="opacity: 0.4;">
+                <div class="badge-emoji">🔟</div>
+                <div class="badge-name">10 Club</div>
+                <div class="badge-desc">Eaten 10 wings</div>
+              </div>
+            </div>
+
+            <div class="button">Log Wings 🍗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 3 -->
+      <div class="palette option3">
+        <div class="palette-name">Option 3: Modern Minimal</div>
+        <div class="phone-mockup">
+          <div class="screen">
+            <div class="banner">🏆 HWFFL</div>
+            <h2>🏆 Leaderboard</h2>
+
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-number">1,247</div>
+                <div class="stat-label">🍗 Total Wings</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">👥 Members</div>
+              </div>
+            </div>
+
+            <div class="section-title">🥇 Top 3</div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥇</span>
+              <div class="avatar">Z</div>
+              <span class="name">Zach</span>
+              <span class="wings">425 wings</span>
+            </div>
+
+            <div class="leaderboard-item">
+              <span class="medal">🥈</span>
+              <div class="avatar">N</div>
+              <span class="name">Nick</span>
+              <span class="wings">312 wings</span>
+            </div>
+
+            <div class="section-title">🎖️ Badges (3/14)</div>
+
+            <div class="badge-grid">
+              <div class="badge-card">
+                <div class="badge-emoji">🍗</div>
+                <div class="badge-name">First Wing</div>
+                <div class="badge-desc">Logged first wings</div>
+              </div>
+              <div class="badge-card" style="opacity: 0.4;">
+                <div class="badge-emoji">🔟</div>
+                <div class="badge-name">10 Club</div>
+                <div class="badge-desc">Eaten 10 wings</div>
+              </div>
+            </div>
+
+            <div class="button">Log Wings 🍗</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

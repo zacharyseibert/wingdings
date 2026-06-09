@@ -2,6 +2,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
+import { colors } from '../../lib/colors';
 
 interface Badge {
   key: string;
@@ -57,16 +58,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
   card: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 20,
     padding: 24,
     borderWidth: 2,
-    borderColor: '#E8722A',
+    borderColor: colors.primary,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#F5E6D3',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -76,14 +77,14 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 16,
     padding: 12,
-    backgroundColor: '#1A0F0A',
+    backgroundColor: colors.background,
     borderRadius: 12,
   },
   emoji: { fontSize: 40 },
-  name: { fontSize: 18, fontWeight: '600', color: '#F5E6D3', marginBottom: 2 },
-  desc: { fontSize: 14, color: '#78716c' },
+  name: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 2 },
+  desc: { fontSize: 14, color: colors.textSecondary },
   button: {
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

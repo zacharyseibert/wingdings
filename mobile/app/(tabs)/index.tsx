@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
 import BadgeCelebration from '../../components/BadgeCelebration';
+import { colors } from '../../lib/colors';
 
 const PRESETS = [1, 5, 6, 10, 12];
 
@@ -263,82 +264,97 @@ export default function LogScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A0F0A' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 20, paddingTop: 0 },
-  headerTitle: { fontSize: 26, fontWeight: 'bold', color: '#F5E6D3', paddingVertical: 16 },
+  headerTitle: { fontSize: 26, fontWeight: 'bold', color: colors.text, paddingVertical: 16 },
 
   sectionLabel: { marginBottom: 8, marginTop: 4 },
-  sectionLabelText: { color: '#78716c', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  sectionLabelText: { color: colors.textSecondary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
 
   // Session box
   sessionBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     alignItems: 'center',
     paddingVertical: 20,
     marginBottom: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   sessionInput: {
     fontSize: 72,
     fontWeight: 'bold',
-    color: '#E8722A',
+    color: colors.primary,
     lineHeight: 80,
     textAlign: 'center',
     minWidth: 120,
   },
-  sessionLabel: { color: '#78716c', fontSize: 14, marginTop: 4 },
+  sessionLabel: { color: colors.textSecondary, fontSize: 14, marginTop: 4 },
 
   // Presets
   presets: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   preset: {
     flex: 1,
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  presetText: { color: '#E8722A', fontSize: 18, fontWeight: '700' },
+  presetText: { color: colors.primary, fontSize: 18, fontWeight: '700' },
 
   stepperRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   stepperBtn: {
     flex: 1,
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  stepperText: { color: '#F5E6D3', fontSize: 22, fontWeight: '600' },
+  stepperText: { color: colors.text, fontSize: 22, fontWeight: '600' },
 
   // Attach row
   attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   attachChip: {
     flex: 1,
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  attachChipActive: { borderColor: '#E8722A', backgroundColor: '#3D2010' },
-  attachChipText: { color: '#78716c', fontSize: 14 },
+  attachChipActive: { borderColor: colors.primary, backgroundColor: '#FFF7ED' },
+  attachChipText: { color: colors.textSecondary, fontSize: 14 },
   photoPreviewBox: { marginBottom: 12 },
   photoPreview: { width: '100%', height: 180, borderRadius: 14 },
   noteInput: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    color: '#F5E6D3',
+    color: colors.text,
     fontSize: 15,
     height: 56,
     textAlignVertical: 'center',
@@ -348,25 +364,35 @@ const styles = StyleSheet.create({
 
   // Submit
   submitBtn: {
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
     marginBottom: 24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  submitBtnDisabled: { backgroundColor: '#3D2618' },
+  submitBtnDisabled: { backgroundColor: colors.border, shadowOpacity: 0 },
   submitText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 
   // Total
   totalBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     alignItems: 'center',
     paddingVertical: 24,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  totalBoxFlash: { borderColor: '#E8722A' },
-  totalNumber: { fontSize: 52, fontWeight: 'bold', color: '#F5E6D3' },
-  totalNumberFlash: { color: '#E8722A' },
+  totalBoxFlash: { borderColor: colors.success, backgroundColor: '#F0FDF4' },
+  totalNumber: { fontSize: 52, fontWeight: 'bold', color: colors.text },
+  totalNumberFlash: { color: colors.success },
 });

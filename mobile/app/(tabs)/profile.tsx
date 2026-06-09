@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import { supabase } from '../../lib/supabase';
 import { getMobileUserId, getMyStats, joinCompetition, leaveCompetition } from '../../lib/wings';
 import { ALL_BADGES } from '../../lib/badges';
+import { colors } from '../../lib/colors';
 
 export default function ProfileScreen() {
   const [email, setEmail] = useState<string | null>(null);
@@ -149,7 +150,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { flexGrow: 1 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8722A" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor=colors.primary />}
       >
         <Text style={styles.title}>Profile</Text>
 
@@ -238,78 +239,78 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A0F0A' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 28 },
+  title: { fontSize: 28, fontWeight: 'bold', color: colors.text, marginBottom: 28 },
   avatarBox: { alignItems: 'center', marginBottom: 32 },
   avatarImage: {
     width: 80, height: 80, borderRadius: 40,
   },
   avatar: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
   editBadge: {
     position: 'absolute',
     bottom: 0, right: 0,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#1A0F0A',
+    borderWidth: 2, borderColor: colors.background,
   },
   editBadgeText: { color: '#fff', fontSize: 12 },
   avatarText: { color: '#fff', fontSize: 32, fontWeight: 'bold' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 4 },
-  emailText: { color: '#78716c', fontSize: 14 },
+  name: { fontSize: 22, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  emailText: { color: colors.textSecondary, fontSize: 14 },
   statsRow: { marginBottom: 24 },
   statBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     padding: 24,
     alignItems: 'center',
   },
-  statNumber: { fontSize: 48, fontWeight: 'bold', color: '#E8722A' },
-  statLabel: { color: '#78716c', fontSize: 14, marginTop: 4 },
+  statNumber: { fontSize: 48, fontWeight: 'bold', color: colors.primary },
+  statLabel: { color: colors.textSecondary, fontSize: 14, marginTop: 4 },
   infoBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 32,
   },
-  infoLabel: { color: '#78716c', fontSize: 14 },
-  infoValue: { color: '#F5E6D3', fontSize: 14, fontWeight: '500' },
+  infoLabel: { color: colors.textSecondary, fontSize: 14 },
+  infoValue: { color: colors.text, fontSize: 14, fontWeight: '500' },
   signOutButton: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     padding: 16,
     alignItems: 'center',
   },
-  signOutText: { color: '#ef4444', fontSize: 16, fontWeight: '600' },
+  signOutText: { color: colors.error, fontSize: 16, fontWeight: '600' },
 
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#F5E6D3', marginBottom: 12, marginTop: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 12, marginTop: 8 },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
   badgeCard: {
     width: '47%',
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     alignItems: 'center',
   },
   badgeEmoji: { fontSize: 36, marginBottom: 8 },
-  badgeName: { fontSize: 14, fontWeight: '600', color: '#F5E6D3', marginBottom: 4, textAlign: 'center' },
-  badgeDesc: { fontSize: 11, color: '#78716c', textAlign: 'center' },
+  badgeName: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 4, textAlign: 'center' },
+  badgeDesc: { fontSize: 11, color: colors.textSecondary, textAlign: 'center' },
   badgeCardLocked: {
     opacity: 0.3,
   },
@@ -317,26 +318,26 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   badgeNameLocked: {
-    color: '#78716c',
+    color: colors.textSecondary,
   },
   badgeDescLocked: {
-    color: '#57534e',
+    color: colors.textLight,
   },
   competitionBox: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E8722A',
+    borderColor: colors.primary,
     borderRadius: 14,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
   },
-  competitionName: { fontSize: 16, fontWeight: '600', color: '#F5E6D3', marginBottom: 4 },
-  competitionCode: { fontSize: 12, color: '#78716c' },
-  leaveButton: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  competitionName: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 4 },
+  competitionCode: { fontSize: 12, color: colors.textSecondary },
+  leaveButton: { color: colors.error, fontSize: 14, fontWeight: '600' },
   joinButton: {
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',

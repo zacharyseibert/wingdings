@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
+import { colors } from '../../lib/colors';
 
 interface Place {
   id: string;
@@ -118,7 +119,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
             <TextInput
               style={styles.searchInput}
               placeholder="Search or type a location..."
-              placeholderTextColor="#78716c"
+              placeholderTextColor=colors.textSecondary
               value={search}
               onChangeText={setSearch}
               autoCorrect={false}
@@ -131,7 +132,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
 
           {loading ? (
             <View style={styles.center}>
-              <ActivityIndicator color="#E8722A" />
+              <ActivityIndicator color=colors.primary />
               <Text style={styles.loadingText}>Finding nearby places...</Text>
             </View>
           ) : (
@@ -185,25 +186,25 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A0F0A' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#3D2618' },
-  title: { fontSize: 18, fontWeight: '600', color: '#F5E6D3' },
-  cancel: { color: '#E8722A', fontSize: 16 },
-  searchBox: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#3D2618' },
-  searchInput: { backgroundColor: '#2A1A10', borderRadius: 10, padding: 12, color: '#F5E6D3', fontSize: 15 },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '600', color: colors.text },
+  cancel: { color: colors.primary, fontSize: 16 },
+  searchBox: { padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  searchInput: { backgroundColor: colors.card, borderRadius: 10, padding: 12, color: colors.text, fontSize: 15 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { color: '#78716c', fontSize: 14 },
-  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: '#3D2618' },
+  loadingText: { color: colors.textSecondary, fontSize: 14 },
+  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
   addressIcon: { fontSize: 20 },
-  addressName: { color: '#F5E6D3', fontSize: 15, fontWeight: '500' },
-  addressSub: { color: '#78716c', fontSize: 12, marginTop: 1 },
-  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: '#3D2618' },
+  addressName: { color: colors.text, fontSize: 15, fontWeight: '500' },
+  addressSub: { color: colors.textSecondary, fontSize: 12, marginTop: 1 },
+  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
   placeIcon: { fontSize: 20 },
-  placeName: { color: '#F5E6D3', fontSize: 15, fontWeight: '500' },
-  placeMeta: { color: '#78716c', fontSize: 12, marginTop: 1, textTransform: 'capitalize' },
+  placeName: { color: colors.text, fontSize: 15, fontWeight: '500' },
+  placeMeta: { color: colors.textSecondary, fontSize: 12, marginTop: 1, textTransform: 'capitalize' },
   customRow: { padding: 14 },
-  customText: { color: '#E8722A', fontSize: 15 },
-  emptyText: { color: '#78716c', fontSize: 14, padding: 16 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#3D2618' },
-  footerHint: { color: '#78716c', fontSize: 12, textAlign: 'center' },
+  customText: { color: colors.primary, fontSize: 15 },
+  emptyText: { color: colors.textSecondary, fontSize: 14, padding: 16 },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  footerHint: { color: colors.textSecondary, fontSize: 12, textAlign: 'center' },
 });
