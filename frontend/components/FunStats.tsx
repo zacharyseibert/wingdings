@@ -14,11 +14,11 @@ interface FunStatsData {
 
 function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-wing-card border border-wing-border rounded-xl p-5">
+    <div className="bg-wing-card border border-wing-border rounded-xl p-5 shadow-sm">
       <div className="text-2xl mb-2">{emoji}</div>
-      <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">{label}</div>
-      <div className="text-xl font-bold text-white">{value}</div>
-      {sub && <div className="text-stone-400 text-sm mt-0.5">{sub}</div>}
+      <div className="text-xs text-wing-textLight uppercase tracking-wide mb-1">{label}</div>
+      <div className="text-xl font-bold text-wing-text">{value}</div>
+      {sub && <div className="text-wing-textSecondary text-sm mt-0.5">{sub}</div>}
     </div>
   );
 }

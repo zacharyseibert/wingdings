@@ -35,10 +35,10 @@ export default function StatsBar({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       {cards.map(card => (
-        <div key={card.label} className="bg-wing-card border border-wing-border rounded-xl p-5 text-center">
+        <div key={card.label} className="bg-wing-card border border-wing-border rounded-xl p-5 text-center shadow-sm">
           <div className="text-3xl mb-1">{card.emoji}</div>
-          <div className="text-3xl font-bold text-wing-orange">{card.value}</div>
-          <div className="text-stone-400 text-sm mt-1">{card.label}</div>
+          <div className="text-3xl font-bold text-wing-primary">{card.value}</div>
+          <div className="text-wing-textSecondary text-sm mt-1">{card.label}</div>
         </div>
       ))}
     </div>
