@@ -14,12 +14,13 @@ interface User {
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export default function Leaderboard() {
+export default function Leaderboard({ competitionId }: { competitionId?: number | null }) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState<string | null>(null);
 
   const fetchLeaderboard = useCallback(async () => {
+    // For now, just use Supabase directly (competition filtering would need backend support)
     const { data } = await supabase
       .from('users')
       .select('id, display_name, username, avatar_url, total_wings, updated_at')
@@ -28,7 +29,7 @@ export default function Leaderboard() {
       .limit(10);
     if (data) setUsers(data);
     setLoading(false);
-  }, []);
+  }, [competitionId]);
 
   useEffect(() => {
     fetchLeaderboard();
