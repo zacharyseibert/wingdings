@@ -21,20 +21,21 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default function ActivityFeed({ apiUrl }: { apiUrl: string }) {
+export default function ActivityFeed({ apiUrl, competitionId }: { apiUrl: string; competitionId?: number | null }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
   const fetchRecent = useCallback(async () => {
     try {
+      // TODO: Add competition filtering when backend supports it
       const res = await fetch(`${apiUrl}/api/recent?limit=8`);
       if (res.ok) {
         const { data } = await res.json();
         setEntries(data);
       }
     } catch { /* non-fatal */ }
-  }, [apiUrl]);
+  }, [apiUrl, competitionId]);
 
   useEffect(() => {
     fetchRecent();

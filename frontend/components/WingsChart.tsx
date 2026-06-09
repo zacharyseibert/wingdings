@@ -13,13 +13,14 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function WingsChart({ apiUrl }: { apiUrl: string }) {
+export default function WingsChart({ apiUrl, competitionId }: { apiUrl: string; competitionId?: number | null }) {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
+        // TODO: Add competition filtering when backend supports it
         const res = await fetch(`${apiUrl}/api/wings-over-time`);
         if (res.ok) {
           const { data } = await res.json();
@@ -29,7 +30,7 @@ export default function WingsChart({ apiUrl }: { apiUrl: string }) {
       setLoading(false);
     }
     load();
-  }, [apiUrl]);
+  }, [apiUrl, competitionId]);
 
   if (loading) {
     return <div className="h-48 rounded-xl bg-wing-card animate-pulse" />;
