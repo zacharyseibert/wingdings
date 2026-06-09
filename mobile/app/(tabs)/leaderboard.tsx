@@ -50,17 +50,22 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats }: {
+function Header({ globalStats, funStats, viewMode, isInCompetition }: {
   globalStats: GlobalStats | null;
   funStats: FunStats | null;
+  viewMode: 'competition' | 'global';
+  isInCompetition: boolean;
 }) {
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
     : '—';
 
+  const statsTitle = viewMode === 'competition' && isInCompetition ? 'Competition Stats' : 'Global Stats';
+
   return (
     <View>
       <Text style={styles.title}>🏆 Leaderboard</Text>
+      <Text style={styles.sectionTitle}>{statsTitle}</Text>
 
       {/* Global stats */}
       <View style={styles.statsRow}>
@@ -108,11 +113,31 @@ function Header({ globalStats, funStats }: {
   );
 }
 
-function CompetitionBanner({ competition }: { competition: any }) {
+function ViewModeToggle({ viewMode, onToggle, competition }: {
+  viewMode: 'competition' | 'global';
+  onToggle: () => void;
+  competition: any;
+}) {
   if (!competition) return null;
+
   return (
-    <View style={styles.competitionBanner}>
-      <Text style={styles.competitionText}>🏆 {competition.name}</Text>
+    <View style={styles.toggleContainer}>
+      <TouchableOpacity
+        style={[styles.toggleButton, viewMode === 'competition' && styles.toggleButtonActive]}
+        onPress={() => viewMode !== 'competition' && onToggle()}
+      >
+        <Text style={[styles.toggleText, viewMode === 'competition' && styles.toggleTextActive]}>
+          🏆 {competition.name}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.toggleButton, viewMode === 'global' && styles.toggleButtonActive]}
+        onPress={() => viewMode !== 'global' && onToggle()}
+      >
+        <Text style={[styles.toggleText, viewMode === 'global' && styles.toggleTextActive]}>
+          🌍 Global
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -195,6 +220,7 @@ export default function LeaderboardScreen() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [userBadges, setUserBadges] = useState<Record<string, any[]>>({});
   const [competition, setCompetition] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'competition' | 'global'>('competition');
 
   const load = useCallback(async () => {
     try {
@@ -203,8 +229,12 @@ export default function LeaderboardScreen() {
       const competitionId = myStats.competition?.id ?? null;
       setCompetition(myStats.competition);
 
+      // Determine which view to show based on current mode and competition status
+      const shouldShowCompetition = viewMode === 'competition' && competitionId !== null;
+      const leaderboardId = shouldShowCompetition ? competitionId : null;
+
       const [boardData, statsRes, funRes, recentRes] = await Promise.all([
-        getLeaderboard(competitionId),
+        getLeaderboard(leaderboardId),
         fetch(`${API_URL}/api/stats`).then(r => r.json()).catch(() => null),
         fetch(`${API_URL}/api/fun-stats`).then(r => r.json()).catch(() => null),
         fetch(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
@@ -232,27 +262,31 @@ export default function LeaderboardScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [viewMode]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleToggle = () => {
+    setViewMode(viewMode === 'competition' ? 'global' : 'competition');
+  };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color=colors.primary style={{ marginTop: 80 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <CompetitionBanner competition={competition} />
+      <ViewModeToggle viewMode={viewMode} onToggle={handleToggle} competition={competition} />
       <FlatList
         data={board}
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor=colors.primary />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} viewMode={viewMode} isInCompetition={!!competition} />}
         ListFooterComponent={<Footer recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {
@@ -408,5 +442,34 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: colors.background,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  toggleButtonActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  toggleTextActive: {
+    color: '#FFFFFF',
   },
 });
