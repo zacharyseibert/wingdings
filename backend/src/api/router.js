@@ -283,6 +283,38 @@ router.post('/mobile/competition/leave', async (req, res) => {
   }
 });
 
+// DELETE /api/mobile/delete-account — permanently delete user account and all data
+router.delete('/mobile/delete-account', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (profile) {
+      await supabase.from('wing_entries').delete().eq('user_id', profile.id);
+      await supabase.from('badges').delete().eq('user_id', profile.id);
+      await supabase.from('users').delete().eq('id', profile.id);
+    }
+
+    // Delete the auth user via admin API
+    await supabase.auth.admin.deleteUser(user.id);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[api] delete-account error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/health — used by Render keep-alive ping
 router.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 

@@ -146,6 +146,32 @@ export default function ProfileScreen() {
     ]);
   }
 
+  async function handleDeleteAccount() {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your wing data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete Account', style: 'destructive', onPress: async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/delete-account`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            if (!res.ok) throw new Error('Failed to delete account');
+            await AsyncStorage.clear();
+            await supabase.auth.signOut({ scope: 'local' });
+            router.replace('/(auth)/login');
+          } catch (err: any) {
+            Alert.alert('Error', err.message ?? 'Could not delete account. Please try again.');
+          }
+        }},
+      ]
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -233,6 +259,10 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -296,6 +326,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signOutText: { color: colors.error, fontSize: 16, fontWeight: '600' },
+  deleteButton: {
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  deleteText: { color: colors.textLight, fontSize: 14 },
 
   sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 12, marginTop: 8 },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
