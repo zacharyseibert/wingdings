@@ -85,7 +85,7 @@ router.post('/mobile/log', async (req, res) => {
     // Find the user record linked to this auth ID
     const { data: profile } = await supabase
       .from('users')
-      .select('id, display_name, username')
+      .select('id, display_name, username, competition_id')
       .eq('auth_id', user.id)
       .single();
 
@@ -111,14 +111,16 @@ router.post('/mobile/log', async (req, res) => {
 
     res.json({ total_wings: updated.total_wings, newBadges });
 
-    // Announce wings + badges to Slack (non-blocking)
+    // Announce wings + badges to Slack for HWFFL competition members only
     const displayName = profile.display_name || profile.username;
-    announceWingsToSlack(displayName, amount, {
-      note: note ?? null,
-      locationName: locationName ?? null,
-      photoUrl: photoUrl ?? null,
-      totalWings: updated.total_wings,
-    }).catch(console.error);
+    if (profile.competition_id === 1) {
+      announceWingsToSlack(displayName, amount, {
+        note: note ?? null,
+        locationName: locationName ?? null,
+        photoUrl: photoUrl ?? null,
+        totalWings: updated.total_wings,
+      }).catch(console.error);
+    }
 
     if (newBadges.length > 0) {
       announceBadgesToSlack(profile.id, displayName, newBadges).catch(console.error);
