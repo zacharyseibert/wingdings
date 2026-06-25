@@ -317,6 +317,76 @@ router.delete('/mobile/delete-account', async (req, res) => {
   }
 });
 
+// GET /api/reactions?entryIds=1,2,3 — fetch reactions for a set of entries
+router.get('/reactions', async (req, res) => {
+  try {
+    const ids = (req.query.entryIds ?? '').split(',').map(Number).filter(Boolean);
+    if (ids.length === 0) return res.json({ data: {} });
+
+    const { data, error } = await supabase
+      .from('reactions')
+      .select('entry_id, emoji, user_id')
+      .in('entry_id', ids);
+
+    if (error) throw error;
+
+    // Group by entry_id: { [entry_id]: { [emoji]: [user_ids] } }
+    const grouped = {};
+    for (const r of data) {
+      if (!grouped[r.entry_id]) grouped[r.entry_id] = {};
+      if (!grouped[r.entry_id][r.emoji]) grouped[r.entry_id][r.emoji] = [];
+      grouped[r.entry_id][r.emoji].push(r.user_id);
+    }
+
+    res.json({ data: grouped });
+  } catch (err) {
+    console.error('[api] reactions error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/reactions — add or remove a reaction (toggle)
+router.post('/reactions', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
+    if (!profile) return res.status(404).json({ error: 'User not found' });
+
+    const { entryId, emoji } = req.body;
+    if (!entryId || !emoji) return res.status(400).json({ error: 'entryId and emoji required' });
+
+    // Check if reaction already exists
+    const { data: existing } = await supabase
+      .from('reactions')
+      .select('id')
+      .eq('entry_id', entryId)
+      .eq('user_id', profile.id)
+      .eq('emoji', emoji)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('reactions').delete().eq('id', existing.id);
+      res.json({ action: 'removed' });
+    } else {
+      await supabase.from('reactions').insert({ entry_id: entryId, user_id: profile.id, emoji });
+      res.json({ action: 'added' });
+    }
+  } catch (err) {
+    console.error('[api] reactions post error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/health — used by Render keep-alive ping
 router.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
