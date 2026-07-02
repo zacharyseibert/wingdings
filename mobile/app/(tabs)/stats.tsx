@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   rowAmount: { color: colors.primary, fontSize: 17, fontWeight: '600' },
   rowTime: { color: colors.textSecondary, fontSize: 14 },
