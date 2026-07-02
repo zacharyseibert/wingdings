@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Image, TouchableOpacity, Alert,
+  Animated, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +12,42 @@ import { getMyStats } from '../../lib/wings';
 import { supabase } from '../../lib/supabase';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const DELETE_WIDTH = 80;
+
+function SwipeableRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isOpen = useRef(false);
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < Math.abs(g.dx),
+    onPanResponderMove: (_, g) => {
+      const x = Math.max(-DELETE_WIDTH, Math.min(0, g.dx + (isOpen.current ? -DELETE_WIDTH : 0)));
+      translateX.setValue(x);
+    },
+    onPanResponderRelease: (_, g) => {
+      const shouldOpen = g.dx < -DELETE_WIDTH / 2 || (isOpen.current && g.dx < DELETE_WIDTH / 2);
+      isOpen.current = shouldOpen;
+      Animated.spring(translateX, { toValue: shouldOpen ? -DELETE_WIDTH : 0, useNativeDriver: true, bounciness: 0 }).start();
+    },
+  })).current;
+
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      <View style={styles.deleteAction}>
+        <TouchableOpacity style={styles.deleteActionInner} onPress={() => {
+          Animated.timing(translateX, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+          isOpen.current = false;
+          onDelete();
+        }}>
+          <Text style={styles.deleteActionText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+      <Animated.View style={{ transform: [{ translateX }] }} {...panResponder.panHandlers}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
 
 const STATS_CACHE_KEY = 'wingdings:my_stats_cache';
 
@@ -110,33 +147,27 @@ export default function StatsScreen() {
           <Text style={styles.empty}>No entries yet — go eat some wings!</Text>
         ) : (
           history.map((e, i) => (
-            <TouchableOpacity
-              key={e.id ?? i}
-              style={[styles.row, deletingId === e.id && { opacity: 0.4 }]}
-              onLongPress={() => e.id && handleDelete(e)}
-              activeOpacity={0.8}
-              delayLongPress={400}
-            >
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={styles.rowAmount}>+{e.amount} wings</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <SwipeableRow key={e.id ?? i} onDelete={() => e.id && handleDelete(e)}>
+              <View style={[styles.row, deletingId === e.id && { opacity: 0.4 }]}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.rowAmount}>+{e.amount} wings</Text>
                     <Text style={styles.rowTime}>{timeAgo(e.created_at)}</Text>
                   </View>
+                  {e.note && <Text style={styles.rowLocation}>💬 {e.note}</Text>}
+                  {e.location_name && <Text style={styles.rowLocation}>📍 {e.location_name}</Text>}
+                  {e.photo_url && (
+                    <TouchableOpacity onPress={() => setViewingImage(e.photo_url)}>
+                      <Image
+                        source={{ uri: e.photo_url }}
+                        style={{ width: '100%', height: 140, borderRadius: 10, marginTop: 8 }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  )}
                 </View>
-                {e.note && <Text style={styles.rowLocation}>💬 {e.note}</Text>}
-                {e.location_name && <Text style={styles.rowLocation}>📍 {e.location_name}</Text>}
-                {e.photo_url && (
-                  <TouchableOpacity onPress={() => setViewingImage(e.photo_url)}>
-                    <Image
-                      source={{ uri: e.photo_url }}
-                      style={{ width: '100%', height: 140, borderRadius: 10, marginTop: 8 }}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                )}
               </View>
-            </TouchableOpacity>
+            </SwipeableRow>
           ))
         )}
       </ScrollView>
@@ -173,4 +204,11 @@ const styles = StyleSheet.create({
   rowAmount: { color: colors.primary, fontSize: 17, fontWeight: '600' },
   rowTime: { color: colors.textSecondary, fontSize: 14 },
   rowLocation: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
+  deleteAction: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    width: DELETE_WIDTH, backgroundColor: colors.error,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  deleteActionInner: { flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' },
+  deleteActionText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 });
