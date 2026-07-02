@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   Modal, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -20,22 +20,20 @@ interface Props {
   onClose: () => void;
 }
 
+const RADIUS_METERS = 8047; // 5 miles
+
 async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
   const query = `
     [out:json][timeout:15];
     (
-      node["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:2000,${lat},${lng});
-      way["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:2000,${lat},${lng});
-      node["shop"~"convenience|supermarket"]["name"](around:2000,${lat},${lng});
+      node["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:${RADIUS_METERS},${lat},${lng});
+      way["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:${RADIUS_METERS},${lat},${lng});
+      node["shop"~"convenience|supermarket"]["name"](around:${RADIUS_METERS},${lat},${lng});
     );
-    out center 40;
+    out center 60;
   `;
 
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: query,
-  });
-
+  const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
   if (!res.ok) return [];
   const data = await res.json();
 
@@ -57,12 +55,31 @@ async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
     .sort((a: Place, b: Place) => (a.distance ?? 0) - (b.distance ?? 0));
 }
 
+async function searchGlobal(query: string): Promise<Place[]> {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=15&addressdetails=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'WingdingsApp/1.0' } });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data ?? []).map((e: any, i: number) => {
+    const parts = [e.address?.name || e.name, e.address?.city || e.address?.town, e.address?.state].filter(Boolean);
+    return {
+      id: `nom-${i}`,
+      name: parts[0] || e.display_name.split(',')[0],
+      type: parts.slice(1).join(', ') || e.type,
+      distance: undefined,
+    };
+  });
+}
+
 export default function LocationPicker({ visible, onSelect, onClose }: Props) {
   const [search, setSearch] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
+  const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,13 +111,24 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
   useEffect(() => {
     if (visible) {
       setSearch('');
+      setSearchResults([]);
       load();
     }
   }, [visible, load]);
 
-  const filtered = search.trim()
-    ? places.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    : places;
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!search.trim()) { setSearchResults([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true);
+      const results = await searchGlobal(search.trim());
+      setSearchResults(results);
+      setSearching(false);
+    }, 400);
+  }, [search]);
+
+  const isSearching = search.trim().length > 0;
+  const filtered = isSearching ? searchResults : places;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -130,10 +158,10 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
             />
           </View>
 
-          {loading ? (
+          {(loading || searching) ? (
             <View style={styles.center}>
               <ActivityIndicator color={colors.primary} />
-              <Text style={styles.loadingText}>Finding nearby places...</Text>
+              <Text style={styles.loadingText}>{searching ? 'Searching...' : 'Finding nearby places...'}</Text>
             </View>
           ) : (
             <FlatList
@@ -151,7 +179,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
                 )
               }
               ListHeaderComponent={
-                currentAddress ? (
+                !isSearching && currentAddress ? (
                   <TouchableOpacity style={styles.addressRow} onPress={() => { onSelect(currentAddress); onClose(); }}>
                     <Text style={styles.addressIcon}>📍</Text>
                     <View>
@@ -166,7 +194,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
                   <Text style={styles.placeIcon}>🍽️</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.placeName}>{item.name}</Text>
-                    <Text style={styles.placeMeta}>{item.type}{item.distance ? ` · ${item.distance}m away` : ''}</Text>
+                    <Text style={styles.placeMeta}>{item.type}{item.distance ? ` · ${(item.distance / 1609).toFixed(1)} mi away` : ''}</Text>
                   </View>
                 </TouchableOpacity>
               )}
