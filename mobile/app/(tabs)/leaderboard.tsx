@@ -56,14 +56,28 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
   );
 }
 
-function Header({ globalStats, funStats, viewMode, isInCompetition, board }: {
+function Header({ globalStats, funStats, viewMode, isInCompetition, board, competitionId }: {
   globalStats: GlobalStats | null;
   funStats: FunStats | null;
   viewMode: 'competition' | 'global';
   isInCompetition: boolean;
   board: any[];
+  competitionId: number | null;
 }) {
   const [showParticipants, setShowParticipants] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
+
+  async function openParticipants() {
+    setShowParticipants(true);
+    if (competitionId) {
+      fetch(`${API_URL}/api/competition/${competitionId}/participants`)
+        .then(r => r.json())
+        .then(res => setParticipants(res.data ?? []))
+        .catch(() => setParticipants(board));
+    } else {
+      setParticipants(board);
+    }
+  }
 
   const perPerson = globalStats && globalStats.participants > 0
     ? Math.round(globalStats.total / globalStats.participants).toLocaleString()
@@ -82,7 +96,7 @@ function Header({ globalStats, funStats, viewMode, isInCompetition, board }: {
           <Text style={styles.globalNumber}>{globalStats ? globalStats.total.toLocaleString() : '—'}</Text>
           <Text style={styles.globalLabel}>🍗 Total Wings</Text>
         </View>
-        <TouchableOpacity style={styles.globalCard} onPress={() => board.length > 0 && setShowParticipants(true)}>
+        <TouchableOpacity style={styles.globalCard} onPress={openParticipants}>
           <Text style={styles.globalNumber}>{globalStats ? globalStats.participants.toLocaleString() : '—'}</Text>
           <Text style={styles.globalLabel}>👥 Participants</Text>
         </TouchableOpacity>
@@ -99,14 +113,14 @@ function Header({ globalStats, funStats, viewMode, isInCompetition, board }: {
             <View style={styles2.handle} />
             <Text style={styles2.title}>👥 Participants</Text>
             <ScrollView>
-              {board.map((u, i) => (
+              {participants.map((u, i) => (
                 <View key={u.id} style={styles2.row}>
                   <Text style={styles2.rank}>{i + 1}</Text>
                   <View style={styles2.avatar}>
                     <Text style={styles2.avatarText}>{(u.display_name || u.username || '?')[0].toUpperCase()}</Text>
                   </View>
                   <Text style={styles2.name}>{u.display_name || u.username}</Text>
-                  <Text style={styles2.wings}>{u.total_wings.toLocaleString()} 🍗</Text>
+                  <Text style={styles2.wings}>{u.total_wings > 0 ? `${u.total_wings.toLocaleString()} 🍗` : 'No wings yet'}</Text>
                 </View>
               ))}
             </ScrollView>
@@ -413,7 +427,7 @@ export default function LeaderboardScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { flexGrow: 1 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
-        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} viewMode={viewMode} isInCompetition={!!competition} board={board} />}
+        ListHeaderComponent={<Header globalStats={globalStats} funStats={funStats} viewMode={viewMode} isInCompetition={!!competition} board={board} competitionId={competition?.id ?? null} />}
         ListFooterComponent={<Footer recent={recent} expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry} onViewImage={setViewingImage} reactions={reactions} onReact={handleReact} myUserId={myUserId} />}
         ListEmptyComponent={<Text style={styles.empty}>No wings logged yet!</Text>}
         renderItem={({ item, index }) => {

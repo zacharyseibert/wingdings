@@ -317,6 +317,23 @@ router.delete('/mobile/delete-account', async (req, res) => {
   }
 });
 
+// GET /api/competition/:id/participants — all users in a competition (including 0 wings)
+router.get('/competition/:id/participants', async (req, res) => {
+  try {
+    const competitionId = parseInt(req.params.id, 10);
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, display_name, username, total_wings')
+      .eq('competition_id', competitionId)
+      .order('total_wings', { ascending: false });
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    console.error('[api] competition participants error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/mobile/entry/:id — delete a wing entry (auth required, must own it)
 router.delete('/mobile/entry/:id', async (req, res) => {
   try {
