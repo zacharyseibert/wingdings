@@ -15,6 +15,7 @@ export const BADGE_DEFINITIONS = {
   night_owl:    { emoji: '🌙', name: 'Night Owl',     desc: 'Logged wings after midnight' },
   early_bird:   { emoji: '🌅', name: 'Early Bird',    desc: 'Logged wings before 9am' },
   number_one:   { emoji: '🏆', name: '#1',            desc: 'Held the top leaderboard spot' },
+  wing_mayor:   { emoji: '🦅', name: 'Wing Mayor',    desc: 'Logged wings at the same spot 5 times' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -61,17 +62,30 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
       if (badge) newBadges.push({ key, ...badge });
     }
 
-    // Check wing tourist (needs DB query)
+    // Check wing tourist + wing mayor (needs DB query)
     if (locationName) {
-      const { count } = await supabase
+      const { data: locationEntries } = await supabase
         .from('wing_entries')
-        .select('location_name', { count: 'exact', head: true })
+        .select('location_name')
         .eq('user_id', userId)
         .not('location_name', 'is', null);
 
-      if (count && count >= 3) {
-        const badge = await awardBadge(userId, 'wing_tourist');
-        if (badge) newBadges.push({ key: 'wing_tourist', ...badge });
+      if (locationEntries) {
+        const uniqueLocations = new Set(locationEntries.map(e => e.location_name));
+        if (uniqueLocations.size >= 3) {
+          const badge = await awardBadge(userId, 'wing_tourist');
+          if (badge) newBadges.push({ key: 'wing_tourist', ...badge });
+        }
+
+        // Wing Mayor: 5+ visits to the same location
+        const locationCounts = {};
+        for (const e of locationEntries) {
+          locationCounts[e.location_name] = (locationCounts[e.location_name] || 0) + 1;
+        }
+        if (Object.values(locationCounts).some(count => count >= 5)) {
+          const badge = await awardBadge(userId, 'wing_mayor');
+          if (badge) newBadges.push({ key: 'wing_mayor', ...badge });
+        }
       }
     }
 

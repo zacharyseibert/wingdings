@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
 import BadgeCelebration from '../../components/BadgeCelebration';
+import WingMayorCelebration from '../../components/WingMayorCelebration';
 import { colors } from '../../lib/colors';
 
 const PRESETS = [1, 5, 6, 10, 12];
@@ -29,6 +30,7 @@ export default function LogScreen() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [note, setNote] = useState('');
   const [newBadges, setNewBadges] = useState<any[]>([]);
+  const [wingMayorLocation, setWingMayorLocation] = useState<string | null>(null);
 
   const loadUser = useCallback(async () => {
     try {
@@ -122,7 +124,14 @@ export default function LogScreen() {
       setTimeout(() => setFlash(false), 800);
 
       if (result.newBadges.length > 0) {
-        setNewBadges(result.newBadges);
+        const mayorBadge = result.newBadges.find((b: any) => b.key === 'wing_mayor');
+        if (mayorBadge) {
+          setWingMayorLocation(locationName);
+          const otherBadges = result.newBadges.filter((b: any) => b.key !== 'wing_mayor');
+          if (otherBadges.length > 0) setNewBadges(otherBadges);
+        } else {
+          setNewBadges(result.newBadges);
+        }
       } else {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -266,6 +275,11 @@ export default function LogScreen() {
       />
 
       <BadgeCelebration badges={newBadges} onClose={() => setNewBadges([])} />
+      <WingMayorCelebration
+        visible={wingMayorLocation !== null}
+        locationName={wingMayorLocation ?? ''}
+        onClose={() => setWingMayorLocation(null)}
+      />
     </SafeAreaView>
   );
 }

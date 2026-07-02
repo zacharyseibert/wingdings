@@ -235,20 +235,34 @@ export default function ProfileScreen() {
         </View>
 
         {/* Badges */}
-        <Text style={styles.sectionTitle}>🎖️ Badges ({badges.length}/{ALL_BADGES.length})</Text>
-        <View style={styles.badgeGrid}>
-          {ALL_BADGES.map((badgeDef) => {
-            const earned = badges.find(b => b.key === badgeDef.key);
-            const isEarned = !!earned;
-            return (
-              <View key={badgeDef.key} style={[styles.badgeCard, !isEarned && styles.badgeCardLocked]}>
-                <Text style={[styles.badgeEmoji, !isEarned && styles.badgeEmojiLocked]}>{badgeDef.emoji}</Text>
-                <Text style={[styles.badgeName, !isEarned && styles.badgeNameLocked]}>{badgeDef.name}</Text>
-                <Text style={[styles.badgeDesc, !isEarned && styles.badgeDescLocked]}>{badgeDef.desc}</Text>
+        {(() => {
+          const wingMayor = badges.find(b => b.key === 'wing_mayor');
+          const visibleCount = badges.filter(b => b.key !== 'wing_mayor').length;
+          return (
+            <>
+              <Text style={styles.sectionTitle}>🎖️ Badges ({visibleCount}/{ALL_BADGES.length}{wingMayor ? ' + 🦅' : ''})</Text>
+              <View style={styles.badgeGrid}>
+                {wingMayor && (
+                  <View style={[styles.badgeCard, { borderColor: '#FFD93D', borderWidth: 2 }]}>
+                    <Text style={styles.badgeEmoji}>🦅</Text>
+                    <Text style={styles.badgeName}>Wing Mayor</Text>
+                    <Text style={styles.badgeDesc}>{wingMayor.desc}</Text>
+                  </View>
+                )}
+                {ALL_BADGES.map((badgeDef) => {
+                  const isEarned = !!badges.find(b => b.key === badgeDef.key);
+                  return (
+                    <View key={badgeDef.key} style={[styles.badgeCard, !isEarned && styles.badgeCardLocked]}>
+                      <Text style={[styles.badgeEmoji, !isEarned && styles.badgeEmojiLocked]}>{badgeDef.emoji}</Text>
+                      <Text style={[styles.badgeName, !isEarned && styles.badgeNameLocked]}>{badgeDef.name}</Text>
+                      <Text style={[styles.badgeDesc, !isEarned && styles.badgeDescLocked]}>{badgeDef.desc}</Text>
+                    </View>
+                  );
+                })}
               </View>
-            );
-          })}
-        </View>
+            </>
+          );
+        })()}
 
         {/* Competition */}
         <Text style={styles.sectionTitle}>🏆 Competition</Text>
