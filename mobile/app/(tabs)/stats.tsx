@@ -17,6 +17,7 @@ const DELETE_WIDTH = 80;
 function SwipeableRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
+  const [rowHeight, setRowHeight] = useState(0);
 
   const panResponder = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < Math.abs(g.dx),
@@ -32,17 +33,23 @@ function SwipeableRow({ children, onDelete }: { children: React.ReactNode; onDel
   })).current;
 
   return (
-    <View style={{ overflow: 'hidden' }}>
-      <View style={styles.deleteAction}>
-        <TouchableOpacity style={styles.deleteActionInner} onPress={() => {
-          Animated.timing(translateX, { toValue: 0, duration: 200, useNativeDriver: true }).start();
-          isOpen.current = false;
-          onDelete();
-        }}>
-          <Text style={styles.deleteActionText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-      <Animated.View style={{ transform: [{ translateX }] }} {...panResponder.panHandlers}>
+    <View style={{ overflow: 'hidden', height: rowHeight || undefined }}>
+      {rowHeight > 0 && (
+        <View style={[styles.deleteAction, { height: rowHeight }]}>
+          <TouchableOpacity style={styles.deleteActionInner} onPress={() => {
+            Animated.timing(translateX, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+            isOpen.current = false;
+            onDelete();
+          }}>
+            <Text style={styles.deleteActionText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <Animated.View
+        style={{ transform: [{ translateX }] }}
+        onLayout={e => setRowHeight(e.nativeEvent.layout.height)}
+        {...panResponder.panHandlers}
+      >
         {children}
       </Animated.View>
     </View>
@@ -205,7 +212,7 @@ const styles = StyleSheet.create({
   rowTime: { color: colors.textSecondary, fontSize: 14 },
   rowLocation: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
   deleteAction: {
-    position: 'absolute', right: 0, top: 0, bottom: 0,
+    position: 'absolute', right: 0, top: 0,
     width: DELETE_WIDTH, backgroundColor: colors.error,
     justifyContent: 'center', alignItems: 'center',
   },
