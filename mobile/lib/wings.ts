@@ -117,21 +117,15 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
 }
 
 export async function getMyStats() {
-  // Use API endpoint instead of Supabase client (faster)
-  console.log('[getMyStats] starting...');
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
 
-  console.log('[getMyStats] fetching from API...');
   const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/stats`, {
     headers: { Authorization: `Bearer ${session.access_token}` },
   });
 
-  console.log('[getMyStats] got response:', res.status);
   if (!res.ok) throw new Error('Failed to fetch stats');
-  const data = await res.json();
-  console.log('[getMyStats] done');
-  return data;
+  return res.json();
 }
 
 export async function getLeaderboard(competitionId?: number | null) {

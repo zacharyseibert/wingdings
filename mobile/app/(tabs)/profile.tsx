@@ -146,6 +146,24 @@ export default function ProfileScreen() {
     ]);
   }
 
+  async function handleEditName() {
+    Alert.prompt(
+      'Display Name',
+      'Enter a new display name:',
+      async (name) => {
+        if (!name?.trim()) return;
+        try {
+          await supabase.from('users').update({ display_name: name.trim() }).eq('id', user.id);
+          setUser((prev: any) => ({ ...prev, display_name: name.trim() }));
+        } catch (err: any) {
+          Alert.alert('Error', 'Could not update display name.');
+        }
+      },
+      'plain-text',
+      user?.display_name || user?.username || ''
+    );
+  }
+
   async function handleDeleteAccount() {
     Alert.alert(
       'Delete Account',
@@ -202,7 +220,9 @@ export default function ProfileScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <Text style={styles.name}>{user?.display_name || user?.username || '—'}</Text>
+          <TouchableOpacity onPress={handleEditName}>
+            <Text style={styles.name}>{user?.display_name || user?.username || '—'} <Text style={styles.editNameHint}>✎</Text></Text>
+          </TouchableOpacity>
           <Text style={styles.emailText}>{email}</Text>
         </View>
 
@@ -292,6 +312,7 @@ const styles = StyleSheet.create({
   editBadgeText: { color: '#fff', fontSize: 12 },
   avatarText: { color: '#fff', fontSize: 32, fontWeight: 'bold' },
   name: { fontSize: 22, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  editNameHint: { fontSize: 14, color: colors.textSecondary, fontWeight: 'normal' },
   emailText: { color: colors.textSecondary, fontSize: 14 },
   statsRow: { marginBottom: 24 },
   statBox: {

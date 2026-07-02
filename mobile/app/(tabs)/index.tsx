@@ -4,9 +4,12 @@ import {
   Alert, ActivityIndicator, TextInput, Image,
   ScrollView, RefreshControl, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { getMobileUserId, logWings, getMyStats } from '../../lib/wings';
+import { logWings, getMyStats } from '../../lib/wings';
+
+const TOTAL_CACHE_KEY = 'wingdings:total_wings';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
@@ -29,11 +32,14 @@ export default function LogScreen() {
 
   const loadUser = useCallback(async () => {
     try {
-      const { data: { session: authSession } } = await supabase.auth.getSession();
-      if (!authSession) return;
-      const uid = await getMobileUserId(authSession.user.id);
-      const { user } = await getMyStats(uid);
-      setTotal(user?.total_wings ?? 0);
+      // Show cached total immediately while network loads
+      const cached = await AsyncStorage.getItem(TOTAL_CACHE_KEY);
+      if (cached !== null) setTotal(parseInt(cached, 10));
+
+      const { user } = await getMyStats();
+      const fresh = user?.total_wings ?? 0;
+      setTotal(fresh);
+      AsyncStorage.setItem(TOTAL_CACHE_KEY, String(fresh));
     } finally {
       setRefreshing(false);
     }
@@ -107,6 +113,7 @@ export default function LogScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined);
       setTotal(result.total_wings);
+      AsyncStorage.setItem(TOTAL_CACHE_KEY, String(result.total_wings));
       setSession(0);
       setPhotoUri(null);
       setLocationName(null);
@@ -139,7 +146,7 @@ export default function LogScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); loadUser(); }}
-              tintColor="#E8722A"
+              tintColor={colors.primary}
             />
           }
           keyboardShouldPersistTaps="handled"
@@ -155,7 +162,7 @@ export default function LogScreen() {
               onChangeText={handleSessionInput}
               keyboardType="number-pad"
               placeholder="0"
-              placeholderTextColor="#78716c"
+              placeholderTextColor={colors.textSecondary}
               returnKeyType="done"
             />
             <Text style={styles.sessionLabel}>How many wings did you just eat?</Text>
@@ -220,7 +227,7 @@ export default function LogScreen() {
             value={note}
             onChangeText={setNote}
             placeholder="Add a note... (sauce, style, etc.)"
-            placeholderTextColor="#78716c"
+            placeholderTextColor={colors.textSecondary}
             maxLength={120}
             returnKeyType="done"
             numberOfLines={1}

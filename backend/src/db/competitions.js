@@ -27,7 +27,9 @@ export async function getCompetition(competitionId) {
 }
 
 /**
- * Join a competition (set user's competition_id)
+ * Join a competition (set user's competition_id).
+ * Also sets competition_id on any other user rows sharing the same email,
+ * so Slack-logged wings count toward the competition even before account merge.
  */
 export async function joinCompetition(userId, code) {
   const competition = await getCompetitionByCode(code);
@@ -35,12 +37,29 @@ export async function joinCompetition(userId, code) {
     throw new Error('Invalid competition code');
   }
 
+  // Get this user's email to find linked accounts
+  const { data: thisUser } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', userId)
+    .single();
+
+  // Update competition_id on this user
   const { error } = await supabase
     .from('users')
     .update({ competition_id: competition.id })
     .eq('id', userId);
-
   if (error) throw error;
+
+  // Also update any other rows with the same email (e.g. Slack user before merge)
+  if (thisUser?.email) {
+    await supabase
+      .from('users')
+      .update({ competition_id: competition.id })
+      .eq('email', thisUser.email)
+      .neq('id', userId);
+  }
+
   return competition;
 }
 

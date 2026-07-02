@@ -158,7 +158,7 @@ router.get('/mobile/stats', async (req, res) => {
     const [userRes, historyRes] = await Promise.all([
       supabase.from('users').select('*').eq('id', profile.id).single(),
       supabase.from('wing_entries')
-        .select('amount, created_at, photo_url, location_name, note')
+        .select('id, amount, created_at, photo_url, location_name, note')
         .eq('user_id', profile.id)
         .gt('amount', 0)
         .order('created_at', { ascending: false })
@@ -313,6 +313,44 @@ router.delete('/mobile/delete-account', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[api] delete-account error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/mobile/entry/:id — delete a wing entry (auth required, must own it)
+router.delete('/mobile/entry/:id', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: profile } = await supabase
+      .from('users').select('id').eq('auth_id', user.id).single();
+    if (!profile) return res.status(404).json({ error: 'User not found' });
+
+    const entryId = parseInt(req.params.id, 10);
+
+    // Verify ownership before deleting
+    const { data: entry } = await supabase
+      .from('wing_entries').select('id, amount, user_id').eq('id', entryId).single();
+    if (!entry || entry.user_id !== profile.id) {
+      return res.status(403).json({ error: 'Not your entry' });
+    }
+
+    await supabase.from('wing_entries').delete().eq('id', entryId);
+
+    // Recalculate total_wings
+    const { data: entries } = await supabase
+      .from('wing_entries').select('amount').eq('user_id', profile.id);
+    const total = (entries ?? []).reduce((sum, e) => sum + e.amount, 0);
+    await supabase.from('users').update({ total_wings: total }).eq('id', profile.id);
+
+    res.json({ ok: true, total_wings: total });
+  } catch (err) {
+    console.error('[api] delete-entry error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

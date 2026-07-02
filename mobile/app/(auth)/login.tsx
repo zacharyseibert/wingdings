@@ -4,6 +4,10 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { colors } from '../../lib/colors';
+
+const DEMO_EMAIL = 'applereview@wingdings.app';
+const DEMO_PASSWORD = 'WingReview2026!';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -14,6 +18,18 @@ export default function LoginScreen() {
   async function sendCode() {
     if (!email.trim()) return;
     setLoading(true);
+
+    // Demo account bypass — skip OTP entirely
+    if (email.trim().toLowerCase() === DEMO_EMAIL) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: DEMO_EMAIL,
+        password: DEMO_PASSWORD,
+      });
+      setLoading(false);
+      if (error) Alert.alert('Error', error.message);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { shouldCreateUser: true },
@@ -55,7 +71,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="your@email.com"
-            placeholderTextColor="#78716c"
+            placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -79,7 +95,7 @@ export default function LoginScreen() {
           <TextInput
             style={[styles.input, styles.codeInput]}
             placeholder="000000"
-            placeholderTextColor="#78716c"
+            placeholderTextColor={colors.textSecondary}
             value={code}
             onChangeText={setCode}
             keyboardType="number-pad"
@@ -108,35 +124,35 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A0F0A',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
   emoji: { fontSize: 72, marginBottom: 12 },
-  title: { fontSize: 36, fontWeight: 'bold', color: '#F5E6D3', marginBottom: 8 },
-  sub: { fontSize: 15, color: '#78716c', marginBottom: 48, textAlign: 'center' },
-  hint: { color: '#78716c', fontSize: 14, marginBottom: 8, textAlign: 'center' },
+  title: { fontSize: 36, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
+  sub: { fontSize: 15, color: colors.textSecondary, marginBottom: 48, textAlign: 'center' },
+  hint: { color: colors.textSecondary, fontSize: 14, marginBottom: 8, textAlign: 'center' },
   form: { width: '100%', gap: 12 },
   input: {
-    backgroundColor: '#2A1A10',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#3D2618',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#F5E6D3',
+    color: colors.text,
     fontSize: 16,
     height: 52,
   },
   codeInput: { fontSize: 28, textAlign: 'center', letterSpacing: 8 },
   button: {
-    backgroundColor: '#E8722A',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#E8722A', textAlign: 'center', marginTop: 4 },
+  link: { color: colors.primary, textAlign: 'center', marginTop: 4 },
 });
