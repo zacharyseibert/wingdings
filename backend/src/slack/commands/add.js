@@ -53,6 +53,10 @@ export async function handleAdd(args, body, client, respond) {
     localHour: new Date().getHours(),
   });
 
+  if (user.competition_id !== hwffl?.id) {
+    return respond({ response_type: 'ephemeral', text: `✅ Logged ${amount} wing${amount === 1 ? '' : 's'}! Your total: *${user.total_wings}*` });
+  }
+
   const emoji = amount >= 20 ? '🍗🔥' : '🍗';
   let message = `${emoji} *${displayName}* just crushed *${amount} wing${amount === 1 ? '' : 's'}*! Their total: *${user.total_wings}* 🏆`;
 
