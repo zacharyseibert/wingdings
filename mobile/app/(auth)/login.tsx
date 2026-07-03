@@ -6,10 +6,10 @@ import {
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../lib/colors';
 
-const PASSWORD_ACCOUNTS: Record<string, string> = {
-  'applereview@wingdings.app': 'WingReview2026!',
-  'emily@wingdings.app': 'WingdingsEmily1!',
-  'elizabeth@wingdings.app': 'WingdingsElizabeth1!',
+const PASSWORD_ACCOUNTS: Record<string, string | undefined> = {
+  'applereview@wingdings.app': process.env.EXPO_PUBLIC_ACCOUNT_PW_APPLEREVIEW,
+  'emily@wingdings.app': process.env.EXPO_PUBLIC_ACCOUNT_PW_EMILY,
+  'elizabeth@wingdings.app': process.env.EXPO_PUBLIC_ACCOUNT_PW_ELIZABETH,
 };
 
 export default function LoginScreen() {
