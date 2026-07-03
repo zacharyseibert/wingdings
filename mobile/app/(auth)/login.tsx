@@ -6,8 +6,11 @@ import {
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../lib/colors';
 
-const DEMO_EMAIL = 'applereview@wingdings.app';
-const DEMO_PASSWORD = 'WingReview2026!';
+const PASSWORD_ACCOUNTS: Record<string, string> = {
+  'applereview@wingdings.app': 'WingReview2026!',
+  'emily@wingdings.app': 'WingdingsEmily1!',
+  'elizabeth@wingdings.app': 'WingdingsElizabeth1!',
+};
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,12 +22,11 @@ export default function LoginScreen() {
     if (!email.trim()) return;
     setLoading(true);
 
-    // Demo account bypass — skip OTP entirely
-    if (email.trim().toLowerCase() === DEMO_EMAIL) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-      });
+    // Password accounts bypass — skip OTP entirely
+    const normalizedEmail = email.trim().toLowerCase();
+    const password = PASSWORD_ACCOUNTS[normalizedEmail];
+    if (password) {
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       setLoading(false);
       if (error) Alert.alert('Error', error.message);
       return;
