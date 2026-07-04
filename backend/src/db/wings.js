@@ -135,7 +135,7 @@ export async function getGlobalStats(competitionId = null) {
   const { data, error } = await query;
   if (error) throw error;
   const total = data.reduce((sum, u) => sum + u.total_wings, 0);
-  const participants = data.filter(u => u.total_wings > 0).length;
+  const participants = competitionId !== null ? data.length : data.filter(u => u.total_wings > 0).length;
   return { total, participants };
 }
 
