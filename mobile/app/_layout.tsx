@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { Session } from '@supabase/supabase-js';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppState } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { ensureProfile } from '../lib/wings';
 import { registerForPushNotifications } from '../lib/notifications';
@@ -12,6 +13,12 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Refresh session when app comes to foreground — prevents iOS background suspension from expiring tokens
+    const appStateSub = AppState.addEventListener('change', state => {
+      if (state === 'active') supabase.auth.startAutoRefresh();
+      else supabase.auth.stopAutoRefresh();
+    });
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setReady(true);
@@ -42,6 +49,7 @@ export default function RootLayout() {
     Linking.getInitialURL().then(url => { if (url) handleUrl({ url }); });
 
     return () => {
+      appStateSub.remove();
       subscription.unsubscribe();
       sub.remove();
     };
