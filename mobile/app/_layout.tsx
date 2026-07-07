@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { Session } from '@supabase/supabase-js';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppState } from 'react-native';
+import { AppState, View, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { ensureProfile } from '../lib/wings';
 import { registerForPushNotifications } from '../lib/notifications';
 import * as Linking from 'expo-linking';
+import { colors } from '../lib/colors';
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     // Refresh session when app comes to foreground — prevents iOS background suspension from expiring tokens
@@ -22,10 +24,17 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setReady(true);
+      // If no session from storage, give onAuthStateChange 1.5s to fire before redirecting to login
+      if (!session) {
+        setTimeout(() => setConfirmed(true), 1500);
+      } else {
+        setConfirmed(true);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
+      setConfirmed(true);
       if (session) {
         await ensureProfile(session.user.id, session.user.email ?? '');
         registerForPushNotifications().catch(console.error);
@@ -56,13 +65,21 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !confirmed) return;
     if (session) {
       router.replace('/(tabs)');
     } else {
       router.replace('/(auth)/login');
     }
-  }, [ready, session]);
+  }, [ready, confirmed, session]);
+
+  if (!ready || !confirmed) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
