@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getLeaderboard, getMyStats } from '../../lib/wings';
+import { getLeaderboard, getMyStats, fetchWithTimeout } from '../../lib/wings';
 import { supabase } from '../../lib/supabase';
 import ImageViewer from '../../components/ImageViewer';
 import EmojiPicker from '../../components/EmojiPicker';
@@ -323,9 +323,9 @@ export default function LeaderboardScreen() {
       const statsQuery = shouldShowCompetition ? `?competitionId=${competitionId}` : '';
       const [boardData, statsRes, funRes, recentRes] = await Promise.all([
         getLeaderboard(leaderboardId),
-        fetch(`${API_URL}/api/stats${statsQuery}`).then(r => r.json()).catch(() => null),
-        fetch(`${API_URL}/api/fun-stats${statsQuery}`).then(r => r.json()).catch(() => null),
-        fetch(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
+        fetchWithTimeout(`${API_URL}/api/stats${statsQuery}`).then(r => r.json()).catch(() => null),
+        fetchWithTimeout(`${API_URL}/api/fun-stats${statsQuery}`).then(r => r.json()).catch(() => null),
+        fetchWithTimeout(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
       ]);
       setBoard(boardData);
       if (statsRes) setGlobalStats(statsRes);

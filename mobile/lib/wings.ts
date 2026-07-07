@@ -1,6 +1,17 @@
 import { supabase } from './supabase';
 import * as FileSystem from 'expo-file-system';
 
+export async function fetchWithTimeout(url: string, options?: RequestInit, ms = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * On mobile login, link this auth session to the right user:
  * 1. If a Slack user exists with this email → link auth_id to them
@@ -133,7 +144,7 @@ export async function getLeaderboard(competitionId?: number | null) {
   const url = competitionId
     ? `${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10&competitionId=${competitionId}`
     : `${process.env.EXPO_PUBLIC_API_URL}/api/leaderboard?limit=10`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   const { data } = await res.json();
   return data ?? [];
