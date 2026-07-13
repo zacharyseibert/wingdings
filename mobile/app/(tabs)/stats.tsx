@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAppStateRefresh } from '../../lib/useAppStateRefresh';
 import {
   View, Text, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Image, TouchableOpacity, Alert,
@@ -94,6 +95,7 @@ export default function StatsScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useAppStateRefresh(load);
 
   async function handleDelete(entry: any) {
     Alert.alert(

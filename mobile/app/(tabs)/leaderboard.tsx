@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStateRefresh } from '../../lib/useAppStateRefresh';
 import {
   View, Text, StyleSheet, FlatList,
   RefreshControl, ActivityIndicator, Image, TouchableOpacity,
@@ -10,6 +11,7 @@ import { getLeaderboard, getMyStats, fetchWithTimeout } from '../../lib/wings';
 import { supabase } from '../../lib/supabase';
 import ImageViewer from '../../components/ImageViewer';
 import EmojiPicker from '../../components/EmojiPicker';
+import ParticipantCard from '../../components/ParticipantCard';
 import { colors } from '../../lib/colors';
 
 const CACHE_KEY = 'wingdings:leaderboard_cache';
@@ -66,6 +68,7 @@ function Header({ globalStats, funStats, viewMode, isInCompetition, board, compe
 }) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   async function openParticipants() {
     setShowParticipants(true);
@@ -114,19 +117,22 @@ function Header({ globalStats, funStats, viewMode, isInCompetition, board, compe
             <Text style={styles2.title}>👥 Participants</Text>
             <ScrollView>
               {participants.map((u, i) => (
-                <View key={u.id} style={styles2.row}>
+                <TouchableOpacity key={u.id} style={styles2.row} onPress={() => setSelectedUserId(u.id)} activeOpacity={0.7}>
                   <Text style={styles2.rank}>{i + 1}</Text>
                   <View style={styles2.avatar}>
                     <Text style={styles2.avatarText}>{(u.display_name || u.username || '?')[0].toUpperCase()}</Text>
                   </View>
                   <Text style={styles2.name}>{u.display_name || u.username}</Text>
                   <Text style={styles2.wings}>{u.total_wings > 0 ? `${u.total_wings.toLocaleString()} 🍗` : 'No wings yet'}</Text>
-                </View>
+                  <Text style={styles2.chevron}>›</Text>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      <ParticipantCard userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
 
       {/* Records */}
       <Text style={styles.sectionTitle}>📈 Records</Text>
@@ -297,6 +303,7 @@ export default function LeaderboardScreen() {
   const [viewMode, setViewMode] = useState<'competition' | 'global'>('competition');
   const [reactions, setReactions] = useState<Record<number, Record<string, string[]>>>({});
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -372,6 +379,7 @@ export default function LeaderboardScreen() {
   }, [viewMode]);
 
   useEffect(() => { load(); }, [load]);
+  useAppStateRefresh(load);
 
   useEffect(() => {
     supabase.from('users').select('id').then(({ data }) => {
@@ -435,7 +443,7 @@ export default function LeaderboardScreen() {
           const medal = MEDALS[index] ?? `${index + 1}`;
           const badges = userBadges[item.id] ?? [];
           return (
-            <View style={styles.row}>
+            <TouchableOpacity style={styles.row} onPress={() => setProfileUserId(item.id)} activeOpacity={0.75}>
               <Text style={styles.medal}>{medal}</Text>
               {item.avatar_url ? (
                 <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
@@ -458,11 +466,12 @@ export default function LeaderboardScreen() {
                 <Text style={styles.wingsNumber}>{item.total_wings.toLocaleString()}</Text>
                 <Text style={styles.wingsLabel}>wings</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
       />
       <ImageViewer uri={viewingImage} onClose={() => setViewingImage(null)} />
+      <ParticipantCard userId={profileUserId} onClose={() => setProfileUserId(null)} />
     </SafeAreaView>
   );
 }
@@ -646,4 +655,5 @@ const styles2 = StyleSheet.create({
   avatarText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
   name: { flex: 1, color: colors.text, fontSize: 15, fontWeight: '500' },
   wings: { color: colors.textSecondary, fontSize: 13 },
+  chevron: { color: colors.border, fontSize: 20, marginLeft: 4 },
 });

@@ -16,6 +16,8 @@ export const BADGE_DEFINITIONS = {
   early_bird:   { emoji: '🌅', name: 'Early Bird',    desc: 'Logged wings before 9am' },
   number_one:   { emoji: '🏆', name: '#1',            desc: 'Held the top leaderboard spot' },
   wing_mayor:   { emoji: '🦅', name: 'Wing Mayor',    desc: 'Logged wings at the same spot 5 times' },
+  nice:         { emoji: '😏', name: 'Nice!',         desc: 'Reached exactly 69 wings' },
+  blaze_it:     { emoji: '🌿', name: 'Blaze It',      desc: 'Reached exactly 420 wings' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -51,6 +53,9 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
     if (amount >= 20) quickChecks.push('big_session');
     if (amount >= 50) quickChecks.push('heavyweight');
     if (amount >= 100) quickChecks.push('glutton');
+
+    if (totalWings === 69) quickChecks.push('nice');
+    if (totalWings === 420) quickChecks.push('blaze_it');
 
     if (photoUrl) quickChecks.push('food_blogger');
     if (hour >= 0 && hour < 5) quickChecks.push('night_owl');

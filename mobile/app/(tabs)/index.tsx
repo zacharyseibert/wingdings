@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStateRefresh } from '../../lib/useAppStateRefresh';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, TextInput, Image,
@@ -48,6 +49,7 @@ export default function LogScreen() {
   }, []);
 
   useEffect(() => { loadUser(); }, [loadUser]);
+  useAppStateRefresh(loadUser);
 
   function addToSession(amount: number) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

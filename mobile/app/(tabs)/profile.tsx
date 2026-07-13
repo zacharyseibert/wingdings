@@ -236,17 +236,36 @@ export default function ProfileScreen() {
 
         {/* Badges */}
         {(() => {
+          const HIDDEN_KEYS = ['wing_mayor', 'nice', 'blaze_it'];
           const wingMayor = badges.find(b => b.key === 'wing_mayor');
-          const visibleCount = badges.filter(b => b.key !== 'wing_mayor').length;
+          const nice = badges.find(b => b.key === 'nice');
+          const blazeIt = badges.find(b => b.key === 'blaze_it');
+          const visibleCount = badges.filter(b => !HIDDEN_KEYS.includes(b.key)).length;
+          const hiddenEarned = [wingMayor, nice, blazeIt].filter(Boolean);
+          const hiddenSuffix = hiddenEarned.length ? ` + ${hiddenEarned.map(b => b!.emoji).join('')}` : '';
           return (
             <>
-              <Text style={styles.sectionTitle}>🎖️ Badges ({visibleCount}/{ALL_BADGES.length}{wingMayor ? ' + 🦅' : ''})</Text>
+              <Text style={styles.sectionTitle}>🎖️ Badges ({visibleCount}/{ALL_BADGES.length}{hiddenSuffix})</Text>
               <View style={styles.badgeGrid}>
                 {wingMayor && (
                   <View style={[styles.badgeCard, { borderColor: '#FFD93D', borderWidth: 2 }]}>
                     <Text style={styles.badgeEmoji}>🦅</Text>
                     <Text style={styles.badgeName}>Wing Mayor</Text>
                     <Text style={styles.badgeDesc}>{wingMayor.desc}</Text>
+                  </View>
+                )}
+                {nice && (
+                  <View style={[styles.badgeCard, { borderColor: '#FF69B4', borderWidth: 2 }]}>
+                    <Text style={styles.badgeEmoji}>😏</Text>
+                    <Text style={styles.badgeName}>Nice!</Text>
+                    <Text style={styles.badgeDesc}>{nice.desc}</Text>
+                  </View>
+                )}
+                {blazeIt && (
+                  <View style={[styles.badgeCard, { borderColor: '#6BCB77', borderWidth: 2 }]}>
+                    <Text style={styles.badgeEmoji}>🌿</Text>
+                    <Text style={styles.badgeName}>Blaze It</Text>
+                    <Text style={styles.badgeDesc}>{blazeIt.desc}</Text>
                   </View>
                 )}
                 {ALL_BADGES.map((badgeDef) => {

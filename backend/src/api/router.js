@@ -334,6 +334,42 @@ router.get('/competition/:id/participants', async (req, res) => {
   }
 });
 
+// GET /api/user/:id/profile — public profile: stats + all badges for a user
+router.get('/user/:id/profile', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const [userRes, badgesRes, entriesRes] = await Promise.all([
+      supabase.from('users').select('id, display_name, username, avatar_url, total_wings').eq('id', userId).single(),
+      supabase.from('badges').select('badge_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
+      supabase.from('wing_entries').select('amount, created_at').eq('user_id', userId).gt('amount', 0),
+    ]);
+    if (userRes.error) throw userRes.error;
+
+    const entries = entriesRes.data ?? [];
+    const biggestSession = entries.reduce((max, e) => Math.max(max, e.amount), 0);
+    const entryCount = entries.length;
+
+    // Compute streak
+    const dates = [...new Set(entries.map(e => new Date(e.created_at).toISOString().slice(0, 10)))].sort();
+    let streak = dates.length > 0 ? 1 : 0;
+    let maxStreak = streak;
+    for (let i = 1; i < dates.length; i++) {
+      const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000;
+      streak = diff === 1 ? streak + 1 : 1;
+      if (streak > maxStreak) maxStreak = streak;
+    }
+
+    res.json({
+      user: userRes.data,
+      badges: badgesRes.data ?? [],
+      stats: { biggestSession, entryCount, longestStreak: maxStreak },
+    });
+  } catch (err) {
+    console.error('[api] user profile error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/mobile/entry/:id — delete a wing entry (auth required, must own it)
 router.delete('/mobile/entry/:id', async (req, res) => {
   try {
