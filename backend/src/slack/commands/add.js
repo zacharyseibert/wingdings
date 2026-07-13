@@ -29,14 +29,18 @@ export async function handleAdd(args, body, client, respond) {
 
   await upsertUser({ id: user_id, username: user_name, display_name: displayName, avatar_url: avatarUrl, email });
 
-  // Ensure Slack users are in HWFFL competition
   const hwffl = await getCompetitionByCode('HWFFL-2026');
-  if (hwffl) {
+
+  // Check competition membership BEFORE auto-assigning
+  const userBefore = await getUser(user_id);
+  const isHwfflMember = userBefore?.competition_id === hwffl?.id;
+
+  // Auto-assign new Slack users to HWFFL so their entries count
+  if (hwffl && !userBefore?.competition_id) {
     await supabase
       .from('users')
       .update({ competition_id: hwffl.id })
-      .eq('id', user_id)
-      .is('competition_id', null); // Only update if not already in a competition
+      .eq('id', user_id);
   }
 
   await addWings(user_id, amount);
@@ -53,7 +57,7 @@ export async function handleAdd(args, body, client, respond) {
     localHour: new Date().getHours(),
   });
 
-  if (user.competition_id !== hwffl?.id) {
+  if (!isHwfflMember) {
     return respond({ response_type: 'ephemeral', text: `✅ Logged ${amount} wing${amount === 1 ? '' : 's'}! Your total: *${user.total_wings}*` });
   }
 

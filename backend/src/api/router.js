@@ -122,7 +122,7 @@ router.post('/mobile/log', async (req, res) => {
       }).catch(console.error);
     }
 
-    if (newBadges.length > 0) {
+    if (newBadges.length > 0 && profile.competition_id === 1) {
       announceBadgesToSlack(profile.id, displayName, newBadges).catch(console.error);
     }
 
