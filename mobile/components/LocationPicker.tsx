@@ -12,11 +12,19 @@ interface Place {
   name: string;
   type: string;
   distance?: number;
+  lat?: number;
+  lng?: number;
+}
+
+export interface LocationSelection {
+  name: string;
+  lat?: number;
+  lng?: number;
 }
 
 interface Props {
   visible: boolean;
-  onSelect: (name: string) => void;
+  onSelect: (loc: LocationSelection) => void;
   onClose: () => void;
 }
 
@@ -50,6 +58,8 @@ async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
         name: e.tags.name,
         type: e.tags.amenity?.replace('_', ' ') ?? 'place',
         distance: dist,
+        lat: eLat,
+        lng: eLng,
       };
     })
     .sort((a: Place, b: Place) => (a.distance ?? 0) - (b.distance ?? 0));
@@ -67,6 +77,8 @@ async function searchGlobal(query: string): Promise<Place[]> {
       name: parts[0] || e.display_name.split(',')[0],
       type: parts.slice(1).join(', ') || e.type,
       distance: undefined,
+      lat: parseFloat(e.lat),
+      lng: parseFloat(e.lon),
     };
   });
 }
@@ -153,7 +165,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={() => {
-                if (search.trim()) { onSelect(search.trim()); onClose(); }
+                if (search.trim()) { onSelect({ name: search.trim() }); onClose(); }
               }}
             />
           </View>
@@ -171,7 +183,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 search.trim() ? (
-                  <TouchableOpacity style={styles.customRow} onPress={() => { onSelect(search.trim()); onClose(); }}>
+                  <TouchableOpacity style={styles.customRow} onPress={() => { onSelect({ name: search.trim() }); onClose(); }}>
                     <Text style={styles.customText}>📍 Use "{search.trim()}"</Text>
                   </TouchableOpacity>
                 ) : (
@@ -180,7 +192,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
               }
               ListHeaderComponent={
                 !isSearching && currentAddress ? (
-                  <TouchableOpacity style={styles.addressRow} onPress={() => { onSelect(currentAddress); onClose(); }}>
+                  <TouchableOpacity style={styles.addressRow} onPress={() => { onSelect({ name: currentAddress, lat: coords?.lat, lng: coords?.lng }); onClose(); }}>
                     <Text style={styles.addressIcon}>📍</Text>
                     <View>
                       <Text style={styles.addressName}>Current location</Text>
@@ -190,7 +202,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
                 ) : null
               }
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.placeRow} onPress={() => { onSelect(item.name); onClose(); }}>
+                <TouchableOpacity style={styles.placeRow} onPress={() => { onSelect({ name: item.name, lat: item.lat, lng: item.lng }); onClose(); }}>
                   <Text style={styles.placeIcon}>🍽️</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.placeName}>{item.name}</Text>

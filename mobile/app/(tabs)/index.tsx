@@ -28,6 +28,7 @@ export default function LogScreen() {
   const [flash, setFlash] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [note, setNote] = useState('');
   const [newBadges, setNewBadges] = useState<any[]>([]);
@@ -61,6 +62,7 @@ export default function LogScreen() {
     setSession(0);
     setPhotoUri(null);
     setLocationName(null);
+    setLocationCoords(null);
     setNote('');
     setNewBadges([]);
   }
@@ -115,12 +117,13 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined);
+      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined, locationCoords ?? undefined);
       setTotal(result.total_wings);
       AsyncStorage.setItem(TOTAL_CACHE_KEY, String(result.total_wings));
       setSession(0);
       setPhotoUri(null);
       setLocationName(null);
+      setLocationCoords(null);
       setNote('');
       setFlash(true);
       setTimeout(() => setFlash(false), 800);
@@ -272,7 +275,7 @@ export default function LogScreen() {
 
       <LocationPicker
         visible={showLocationPicker}
-        onSelect={(name) => setLocationName(name)}
+        onSelect={(loc) => { setLocationName(loc.name); setLocationCoords(loc.lat && loc.lng ? { lat: loc.lat, lng: loc.lng } : null); }}
         onClose={() => setShowLocationPicker(false)}
       />
 

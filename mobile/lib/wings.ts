@@ -92,7 +92,7 @@ export async function uploadWingPhoto(userId: string, uri: string): Promise<stri
   return data.publicUrl;
 }
 
-export async function logWings(amount: number, photoUri?: string, locationName?: string, note?: string): Promise<number> {
+export async function logWings(amount: number, photoUri?: string, locationName?: string, note?: string, locationCoords?: { lat: number; lng: number }): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
 
@@ -114,7 +114,9 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
       photoUrl,
       locationName,
       note,
-      localHour: new Date().getHours(), // Send user's local hour for timezone-aware badges
+      localHour: new Date().getHours(),
+      latitude: locationCoords?.lat,
+      longitude: locationCoords?.lng,
     }),
   });
 

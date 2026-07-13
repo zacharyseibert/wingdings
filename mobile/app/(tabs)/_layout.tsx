@@ -43,6 +43,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: function() {
+            return <Text style={{ fontSize: 22 }}>🗺️</Text>;
+          },
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
