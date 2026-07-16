@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+
 interface User {
   id: string;
   display_name: string;
@@ -20,13 +22,11 @@ export default function Leaderboard({ competitionId }: { competitionId?: number 
   const [flash, setFlash] = useState<string | null>(null);
 
   const fetchLeaderboard = useCallback(async () => {
-    // For now, just use Supabase directly (competition filtering would need backend support)
-    const { data } = await supabase
-      .from('users')
-      .select('id, display_name, username, avatar_url, total_wings, updated_at')
-      .gt('total_wings', 0)
-      .order('total_wings', { ascending: false })
-      .limit(10);
+    const url = competitionId
+      ? `${API_URL}/api/leaderboard?limit=10&competitionId=${competitionId}`
+      : `${API_URL}/api/leaderboard?limit=10`;
+    const res = await fetch(url);
+    const { data } = await res.json();
     if (data) setUsers(data);
     setLoading(false);
   }, [competitionId]);
@@ -44,14 +44,8 @@ export default function Leaderboard({ competitionId }: { competitionId?: number 
           const updated = payload.new as User;
           setFlash(updated.id);
           setTimeout(() => setFlash(null), 1500);
-          setUsers(prev => {
-            const next = prev.map(u => u.id === updated.id ? { ...u, ...updated } : u);
-            // If the updated user isn't in the list yet, add them
-            if (!next.find(u => u.id === updated.id) && updated.total_wings > 0) {
-              next.push(updated);
-            }
-            return next.filter(u => u.total_wings > 0).sort((a, b) => b.total_wings - a.total_wings).slice(0, 10);
-          });
+          // Re-fetch to get correctly filtered + sorted list
+          fetchLeaderboard();
         }
       )
       .subscribe();
