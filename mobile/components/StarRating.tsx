@@ -1,4 +1,5 @@
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, StyleSheet, PanResponder } from 'react-native';
 import { colors } from '../lib/colors';
 
 interface Props {
@@ -6,69 +7,95 @@ interface Props {
   onChange: (rating: number | null) => void;
 }
 
-const STARS = [1, 2, 3, 4, 5];
+const STAR_SIZE = 40;
+const GAP = 6;
+const STARS = 5;
+const TOTAL_WIDTH = STARS * STAR_SIZE + (STARS - 1) * GAP;
 
-export default function StarRating({ value, onChange }: Props) {
-  function handlePress(starIndex: number, isHalf: boolean) {
-    const tapped = starIndex + (isHalf ? 0.5 : 1);
-    // Tapping the same value clears it
-    if (value === tapped) {
-      onChange(null);
-    } else {
-      onChange(tapped);
-    }
-  }
+function ratingFromX(x: number): number {
+  const clamped = Math.max(0, Math.min(x, TOTAL_WIDTH));
+  const raw = (clamped / TOTAL_WIDTH) * STARS;
+  const snapped = Math.round(raw * 2) / 2; // snap to nearest 0.5
+  return Math.max(0.5, Math.min(5, snapped));
+}
 
+function StarDisplay({ value }: { value: number | null }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Rate these wings</Text>
-      <View style={styles.stars}>
-        {STARS.map((_, i) => {
-          const filled = value !== null && value >= i + 1;
-          const half = value !== null && value >= i + 0.5 && value < i + 1;
-          return (
-            <View key={i} style={styles.starWrap}>
-              {/* Left half tap zone */}
-              <TouchableOpacity
-                style={styles.halfLeft}
-                onPress={() => handlePress(i, true)}
-                activeOpacity={0.7}
-              />
-              {/* Right half tap zone */}
-              <TouchableOpacity
-                style={styles.halfRight}
-                onPress={() => handlePress(i, false)}
-                activeOpacity={0.7}
-              />
-              {/* Star rendering */}
-              <Text style={styles.starBase}>☆</Text>
-              {(filled || half) && (
-                <View style={[styles.starFill, half && { width: '50%' }]}>
-                  <Text style={styles.starFilled}>★</Text>
-                </View>
-              )}
-            </View>
-          );
-        })}
-      </View>
-      {value !== null && (
-        <Text style={styles.ratingText}>{value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)} / 5</Text>
-      )}
+    <View style={styles.stars} pointerEvents="none">
+      {Array.from({ length: STARS }).map((_, i) => {
+        const filled = value !== null && value >= i + 1;
+        const half = value !== null && value >= i + 0.5 && value < i + 1;
+        return (
+          <View key={i} style={styles.starWrap}>
+            <Text style={styles.starBase}>☆</Text>
+            {(filled || half) && (
+              <View style={[styles.starFill, half && { width: '50%' }]}>
+                <Text style={styles.starFilled}>★</Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 }
 
-const STAR_SIZE = 40;
+export default function StarRating({ value, onChange }: Props) {
+  const containerRef = useRef<View>(null);
+  const offsetX = useRef(0);
+  const [active, setActive] = useState(false);
+
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (e) => {
+      containerRef.current?.measure((fx, fy, width, height, px) => {
+        offsetX.current = px;
+      });
+      const x = e.nativeEvent.pageX - offsetX.current;
+      onChange(ratingFromX(x));
+      setActive(true);
+    },
+    onPanResponderMove: (e) => {
+      const x = e.nativeEvent.pageX - offsetX.current;
+      onChange(ratingFromX(x));
+    },
+    onPanResponderRelease: () => setActive(false),
+    onPanResponderTerminate: () => setActive(false),
+  })).current;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.label}>
+        {value !== null ? `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)} / 5 ★` : 'Rate these wings'}
+      </Text>
+      <View
+        ref={containerRef}
+        style={[styles.touchArea, active && styles.touchAreaActive]}
+        {...panResponder.panHandlers}
+      >
+        <StarDisplay value={value} />
+      </View>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', marginBottom: 12 },
   label: { color: colors.textSecondary, fontSize: 13, marginBottom: 8 },
-  stars: { flexDirection: 'row', gap: 4 },
-  starWrap: { width: STAR_SIZE, height: STAR_SIZE, position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  touchArea: {
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  touchAreaActive: {
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  stars: { flexDirection: 'row', gap: GAP },
+  starWrap: { width: STAR_SIZE, height: STAR_SIZE, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   starBase: { fontSize: STAR_SIZE, color: colors.border, lineHeight: STAR_SIZE + 4, position: 'absolute' },
   starFill: { position: 'absolute', overflow: 'hidden', width: '100%', height: '100%', alignItems: 'flex-start', justifyContent: 'center' },
   starFilled: { fontSize: STAR_SIZE, color: '#F5A623', lineHeight: STAR_SIZE + 4 },
-  halfLeft: { position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', zIndex: 1 },
-  halfRight: { position: 'absolute', right: 0, top: 0, width: '50%', height: '100%', zIndex: 1 },
-  ratingText: { color: colors.textSecondary, fontSize: 12, marginTop: 4 },
 });
