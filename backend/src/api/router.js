@@ -91,12 +91,12 @@ router.post('/mobile/log', async (req, res) => {
 
     if (!profile) return res.status(404).json({ error: 'User profile not found' });
 
-    const { amount, photoUrl, locationName, note, localHour, latitude, longitude } = req.body;
+    const { amount, photoUrl, locationName, note, localHour, latitude, longitude, rating } = req.body;
     if (!amount || typeof amount !== 'number' || amount <= 0 || amount > 10000) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null, latitude ?? null, longitude ?? null);
+    await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null, latitude ?? null, longitude ?? null, rating ?? null);
     const updated = await getUser(profile.id);
 
     // Award badges (fast now with optimized queries)

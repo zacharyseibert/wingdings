@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import LocationPicker from '../../components/LocationPicker';
 import BadgeCelebration from '../../components/BadgeCelebration';
 import WingMayorCelebration from '../../components/WingMayorCelebration';
+import StarRating from '../../components/StarRating';
 import { colors } from '../../lib/colors';
 
 const PRESETS = [1, 5, 6, 10, 12];
@@ -31,6 +32,7 @@ export default function LogScreen() {
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [note, setNote] = useState('');
+  const [rating, setRating] = useState<number | null>(null);
   const [newBadges, setNewBadges] = useState<any[]>([]);
   const [wingMayorLocation, setWingMayorLocation] = useState<string | null>(null);
 
@@ -64,6 +66,7 @@ export default function LogScreen() {
     setLocationName(null);
     setLocationCoords(null);
     setNote('');
+    setRating(null);
     setNewBadges([]);
   }
 
@@ -117,7 +120,7 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined, locationCoords ?? undefined);
+      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined, locationCoords ?? undefined, rating ?? undefined);
       setTotal(result.total_wings);
       AsyncStorage.setItem(TOTAL_CACHE_KEY, String(result.total_wings));
       setSession(0);
@@ -125,6 +128,7 @@ export default function LogScreen() {
       setLocationName(null);
       setLocationCoords(null);
       setNote('');
+      setRating(null);
       setFlash(true);
       setTimeout(() => setFlash(false), 800);
 
@@ -247,6 +251,9 @@ export default function LogScreen() {
             numberOfLines={1}
             multiline={false}
           />
+
+          {/* Rating */}
+          <StarRating value={rating} onChange={setRating} />
 
           {/* Submit button */}
           <TouchableOpacity

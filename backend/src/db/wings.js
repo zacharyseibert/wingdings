@@ -51,7 +51,7 @@ export async function upsertUser({ id, username, display_name, avatar_url, email
  * Add (or subtract, if amount is negative) wings for a user.
  * Ensures the total never goes below 0.
  */
-export async function addWings(userId, amount, note = null, photoUrl = null, locationName = null, latitude = null, longitude = null) {
+export async function addWings(userId, amount, note = null, photoUrl = null, locationName = null, latitude = null, longitude = null, rating = null) {
   // Guard: fetch current total to prevent going negative
   const user = await getUser(userId);
   if (user && user.total_wings + amount < 0) {
@@ -68,6 +68,7 @@ export async function addWings(userId, amount, note = null, photoUrl = null, loc
       ...(locationName ? { location_name: locationName } : {}),
       ...(latitude != null ? { latitude } : {}),
       ...(longitude != null ? { longitude } : {}),
+      ...(rating != null ? { rating } : {}),
     });
   if (error) throw error;
 }
