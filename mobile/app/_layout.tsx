@@ -21,15 +21,7 @@ export default function RootLayout() {
       else supabase.auth.stopAutoRefresh();
     });
 
-    // Hard 3s timeout — if getSession hangs (e.g. token refresh slow on cold start),
-    // navigate to tabs anyway and let onAuthStateChange provide the session when ready.
-    const sessionTimeout = setTimeout(() => {
-      setReady(true);
-      setConfirmed(true);
-    }, 3000);
-
     supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(sessionTimeout);
       setSession(session);
       setReady(true);
       if (!session) {
