@@ -18,6 +18,7 @@ export const BADGE_DEFINITIONS = {
   wing_mayor:   { emoji: '🦅', name: 'Wing Mayor',    desc: 'Logged wings at the same spot 5 times' },
   nice:         { emoji: '😏', name: 'Nice!',         desc: 'Reached exactly 69 wings' },
   blaze_it:     { emoji: '🌿', name: 'Blaze It',      desc: 'Reached exactly 420 wings' },
+  jerkin_it:    { emoji: '🫙', name: "Jerkin' It",    desc: 'Logged wings with jerk in the notes' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -35,7 +36,7 @@ async function awardBadge(userId, badgeKey) {
   return error?.code === '23505' ? null : BADGE_DEFINITIONS[badgeKey];
 }
 
-export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, loggedAt, localHour }) {
+export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, note, loggedAt, localHour }) {
   try {
     const newBadges = [];
     const hour = localHour ?? new Date(loggedAt).getHours();
@@ -56,6 +57,7 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
 
     if (totalWings === 69) quickChecks.push('nice');
     if (totalWings === 420) quickChecks.push('blaze_it');
+    if (note && /jerk/i.test(note)) quickChecks.push('jerkin_it');
 
     if (photoUrl) quickChecks.push('food_blogger');
     if (hour >= 0 && hour < 5) quickChecks.push('night_owl');

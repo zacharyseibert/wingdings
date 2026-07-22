@@ -23,6 +23,7 @@ const BADGE_DEFS: Record<string, { emoji: string; name: string; desc: string }> 
   wing_mayor:   { emoji: '🦅', name: 'Wing Mayor',    desc: 'Logged wings at the same spot 5 times' },
   nice:         { emoji: '😏', name: 'Nice!',         desc: 'Reached exactly 69 wings' },
   blaze_it:     { emoji: '🌿', name: 'Blaze It',      desc: 'Reached exactly 420 wings' },
+  jerkin_it:    { emoji: '🫙', name: "Jerkin' It",    desc: 'Logged wings with jerk in the notes' },
 };
 
 interface Props {

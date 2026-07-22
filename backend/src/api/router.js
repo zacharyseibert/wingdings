@@ -105,6 +105,7 @@ router.post('/mobile/log', async (req, res) => {
       totalWings: updated.total_wings,
       photoUrl: photoUrl ?? null,
       locationName: locationName ?? null,
+      note: note ?? null,
       loggedAt: new Date().toISOString(),
       localHour: localHour ?? new Date().getHours(),
     });
