@@ -12,25 +12,29 @@ const GAP = 6;
 const STARS = 5;
 const TOTAL_WIDTH = STARS * STAR_SIZE + (STARS - 1) * GAP;
 
-function ratingFromX(x: number): number {
-  const clamped = Math.max(0, Math.min(x, TOTAL_WIDTH));
+function ratingFromX(x: number): number | null {
+  if (x <= 0) return null;
+  const clamped = Math.min(x, TOTAL_WIDTH);
   const raw = (clamped / TOTAL_WIDTH) * STARS;
-  const snapped = Math.round(raw * 2) / 2; // snap to nearest 0.5
+  const snapped = Math.round(raw * 2) / 2;
   return Math.max(0.5, Math.min(5, snapped));
 }
 
 function StarDisplay({ value }: { value: number | null }) {
   return (
-    <View style={styles.stars} pointerEvents="none">
+    <View style={styles.stars}>
       {Array.from({ length: STARS }).map((_, i) => {
         const filled = value !== null && value >= i + 1;
         const half = value !== null && value >= i + 0.5 && value < i + 1;
+        const clipWidth = filled ? STAR_SIZE : half ? STAR_SIZE / 2 : 0;
         return (
           <View key={i} style={styles.starWrap}>
-            <Text style={styles.starBase}>☆</Text>
-            {(filled || half) && (
-              <View style={[styles.starFill, half && { width: '50%' }]}>
-                <Text style={styles.starFilled}>★</Text>
+            {/* Base empty star */}
+            <Text style={styles.starEmpty}>☆</Text>
+            {/* Filled overlay, clipped to show full or half */}
+            {clipWidth > 0 && (
+              <View style={[styles.starClip, { width: clipWidth }]}>
+                <Text style={styles.starFull}>★</Text>
               </View>
             )}
           </View>
@@ -49,15 +53,15 @@ export default function StarRating({ value, onChange }: Props) {
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (e) => {
-      containerRef.current?.measure((fx, fy, width, height, px) => {
+      containerRef.current?.measure((_fx, _fy, _w, _h, px) => {
         offsetX.current = px;
       });
-      const x = e.nativeEvent.pageX - offsetX.current;
+      const x = e.nativeEvent.pageX - offsetX.current - 10; // subtract padding
       onChange(ratingFromX(x));
       setActive(true);
     },
     onPanResponderMove: (e) => {
-      const x = e.nativeEvent.pageX - offsetX.current;
+      const x = e.nativeEvent.pageX - offsetX.current - 10; // subtract padding
       onChange(ratingFromX(x));
     },
     onPanResponderRelease: () => setActive(false),
@@ -67,7 +71,9 @@ export default function StarRating({ value, onChange }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>
-        {value !== null ? `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)} / 5 ★` : 'Rate these wings'}
+        {value !== null
+          ? `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)} / 5 ★`
+          : 'Rate these wings'}
       </Text>
       <View
         ref={containerRef}
@@ -94,8 +100,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   stars: { flexDirection: 'row', gap: GAP },
-  starWrap: { width: STAR_SIZE, height: STAR_SIZE, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  starBase: { fontSize: STAR_SIZE, color: colors.border, lineHeight: STAR_SIZE + 4, position: 'absolute' },
-  starFill: { position: 'absolute', overflow: 'hidden', width: '100%', height: '100%', alignItems: 'flex-start', justifyContent: 'center' },
-  starFilled: { fontSize: STAR_SIZE, color: '#F5A623', lineHeight: STAR_SIZE + 4 },
+  starWrap: {
+    width: STAR_SIZE,
+    height: STAR_SIZE,
+    position: 'relative',
+  },
+  starEmpty: {
+    position: 'absolute',
+    left: 0,
+    width: STAR_SIZE,
+    textAlign: 'center',
+    fontSize: STAR_SIZE - 2,
+    lineHeight: STAR_SIZE,
+    color: colors.border,
+  },
+  starClip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    height: STAR_SIZE,
+    overflow: 'hidden',
+  },
+  starFull: {
+    width: STAR_SIZE,
+    textAlign: 'center',
+    fontSize: STAR_SIZE - 2,
+    lineHeight: STAR_SIZE,
+    color: '#F5A623',
+  },
 });

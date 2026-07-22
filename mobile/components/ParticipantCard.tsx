@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image, PanResponder, Animated } from 'react-native';
 import { colors } from '../lib/colors';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -33,9 +33,26 @@ interface Props {
 export default function ParticipantCard({ userId, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
+    onPanResponderMove: (_, g) => {
+      if (g.dy > 0) translateY.setValue(g.dy);
+    },
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > 80 || g.vy > 0.5) {
+        onClose();
+        translateY.setValue(0);
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  })).current;
 
   useEffect(() => {
     if (!userId) return;
+    translateY.setValue(0);
     setLoading(true);
     setProfile(null);
     fetch(`${API_URL}/api/user/${userId}/profile`)
@@ -54,7 +71,7 @@ export default function ParticipantCard({ userId, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={styles.sheet}>
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
           <View style={styles.handle} />
 
           {loading ? (
@@ -116,7 +133,7 @@ export default function ParticipantCard({ userId, onClose }: Props) {
               )}
             </ScrollView>
           )}
-        </TouchableOpacity>
+        </Animated.View>
       </TouchableOpacity>
     </Modal>
   );

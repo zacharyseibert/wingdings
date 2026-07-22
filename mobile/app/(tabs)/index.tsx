@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStateRefresh } from '../../lib/useAppStateRefresh';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, TextInput, Image,
-  ScrollView, RefreshControl, KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,8 +26,6 @@ export default function LogScreen() {
   const [total, setTotal] = useState(0);
   const [session, setSession] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [flash, setFlash] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -35,20 +34,19 @@ export default function LogScreen() {
   const [rating, setRating] = useState<number | null>(null);
   const [newBadges, setNewBadges] = useState<any[]>([]);
   const [wingMayorLocation, setWingMayorLocation] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ total: number; badges: any[] } | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUser = useCallback(async () => {
     try {
-      // Show cached total immediately while network loads
       const cached = await AsyncStorage.getItem(TOTAL_CACHE_KEY);
       if (cached !== null) setTotal(parseInt(cached, 10));
-
       const { user } = await getMyStats();
       const fresh = user?.total_wings ?? 0;
       setTotal(fresh);
       AsyncStorage.setItem(TOTAL_CACHE_KEY, String(fresh));
-    } finally {
-      setRefreshing(false);
-    }
+    } catch {}
   }, []);
 
   useEffect(() => { loadUser(); }, [loadUser]);
@@ -70,6 +68,15 @@ export default function LogScreen() {
     setNewBadges([]);
   }
 
+  function showToast(total: number, badges: any[]) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ total, badges });
+    toastAnim.setValue(0);
+    Animated.spring(toastAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }).start();
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => setToast(null));
+    }, 2800);
+  }
 
   async function handlePickPhoto() {
     Alert.alert('Add Photo', 'Choose an option', [
@@ -129,21 +136,14 @@ export default function LogScreen() {
       setLocationCoords(null);
       setNote('');
       setRating(null);
-      setFlash(true);
-      setTimeout(() => setFlash(false), 800);
+      const mayorBadge = result.newBadges.find((b: any) => b.key === 'wing_mayor');
+      const otherBadges = result.newBadges.filter((b: any) => b.key !== 'wing_mayor');
 
-      if (result.newBadges.length > 0) {
-        const mayorBadge = result.newBadges.find((b: any) => b.key === 'wing_mayor');
-        if (mayorBadge) {
-          setWingMayorLocation(locationName);
-          const otherBadges = result.newBadges.filter((b: any) => b.key !== 'wing_mayor');
-          if (otherBadges.length > 0) setNewBadges(otherBadges);
-        } else {
-          setNewBadges(result.newBadges);
-        }
-      } else {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
+      showToast(result.total_wings, otherBadges);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      if (mayorBadge) setWingMayorLocation(locationName);
+      if (otherBadges.length > 0) setNewBadges(otherBadges);
     } catch (err: any) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message ?? 'Something went wrong');
@@ -155,24 +155,14 @@ export default function LogScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
-          contentContainerStyle={[styles.scroll, { flexGrow: 1 }]}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => { setRefreshing(true); loadUser(); }}
-              tintColor={colors.primary}
-            />
-          }
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.content}>
           <Text style={styles.headerTitle}>Log Wings</Text>
 
-          {/* Session counter — editable */}
-          <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>THIS SESSION</Text></View>
+          {/* Session counter */}
+          <Text style={styles.sectionLabelText}>THIS SESSION</Text>
           <View style={styles.sessionBox}>
             <TextInput
               style={styles.sessionInput}
@@ -187,20 +177,16 @@ export default function LogScreen() {
           </View>
 
           {/* Quick add */}
-          <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>QUICK ADD</Text></View>
+          <Text style={styles.sectionLabelText}>QUICK ADD</Text>
           <View style={styles.presets}>
             {PRESETS.map(n => (
-              <TouchableOpacity
-                key={n}
-                style={styles.preset}
-                onPress={() => addToSession(n)}
-              >
+              <TouchableOpacity key={n} style={styles.preset} onPress={() => addToSession(n)}>
                 <Text style={styles.presetText}>+{n}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Stepper row */}
+          {/* Stepper */}
           <View style={styles.stepperRow}>
             <TouchableOpacity style={styles.stepperBtn} onPress={() => addToSession(-1)}>
               <Text style={styles.stepperText}>−</Text>
@@ -210,7 +196,7 @@ export default function LogScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Photo + Location row */}
+          {/* Photo + Location */}
           <View style={styles.attachRow}>
             {photoUri ? (
               <TouchableOpacity style={[styles.attachChip, styles.attachChipActive]} onPress={() => setPhotoUri(null)}>
@@ -232,11 +218,8 @@ export default function LogScreen() {
             )}
           </View>
 
-          {/* Photo preview */}
           {photoUri && (
-            <View style={styles.photoPreviewBox}>
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            </View>
+            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
           )}
 
           {/* Note */}
@@ -255,7 +238,7 @@ export default function LogScreen() {
           {/* Rating */}
           <StarRating value={rating} onChange={setRating} />
 
-          {/* Submit button */}
+          {/* Submit */}
           <TouchableOpacity
             style={[styles.submitBtn, session === 0 && styles.submitBtnDisabled]}
             onPress={handleSubmit}
@@ -268,16 +251,7 @@ export default function LogScreen() {
                 </Text>
             }
           </TouchableOpacity>
-
-          {/* Total wings */}
-          <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>TOTAL WINGS EATEN</Text></View>
-          <View style={[styles.totalBox, flash && styles.totalBoxFlash]}>
-            <Text style={[styles.totalNumber, flash && styles.totalNumberFlash]}>
-              {total.toLocaleString()}
-            </Text>
-          </View>
-
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       <LocationPicker
@@ -285,6 +259,23 @@ export default function LogScreen() {
         onSelect={(loc) => { setLocationName(loc.name); setLocationCoords(loc.lat && loc.lng ? { lat: loc.lat, lng: loc.lng } : null); }}
         onClose={() => setShowLocationPicker(false)}
       />
+
+      {toast && (
+        <Animated.View style={[
+          styles.toast,
+          {
+            opacity: toastAnim,
+            transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+          },
+        ]}>
+          <Text style={styles.toastTotal}>🍗 {toast.total.toLocaleString()} wings total</Text>
+          {toast.badges.length > 0 && (
+            <Text style={styles.toastBadges}>
+              {toast.badges.map((b: any) => b.emoji).join(' ')} New badge{toast.badges.length > 1 ? 's' : ''}!
+            </Text>
+          )}
+        </Animated.View>
+      )}
 
       <BadgeCelebration badges={newBadges} onClose={() => setNewBadges([])} />
       <WingMayorCelebration
@@ -298,21 +289,20 @@ export default function LogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: 20, paddingTop: 0 },
-  headerTitle: { fontSize: 26, fontWeight: 'bold', color: colors.text, paddingVertical: 16 },
+  inner: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 0, justifyContent: 'center' },
 
-  sectionLabel: { marginBottom: 8, marginTop: 4 },
-  sectionLabelText: { color: colors.textSecondary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: colors.text, paddingVertical: 10 },
+  sectionLabelText: { color: colors.textSecondary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
 
-  // Session box
   sessionBox: {
     backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
-    paddingVertical: 20,
-    marginBottom: 20,
+    paddingVertical: 12,
+    marginBottom: 12,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,
@@ -320,24 +310,23 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sessionInput: {
-    fontSize: 72,
+    fontSize: 60,
     fontWeight: 'bold',
     color: colors.primary,
-    lineHeight: 80,
+    lineHeight: 68,
     textAlign: 'center',
     minWidth: 120,
   },
-  sessionLabel: { color: colors.textSecondary, fontSize: 14, marginTop: 4 },
+  sessionLabel: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
 
-  // Presets
-  presets: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  presets: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   preset: {
     flex: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 11,
     alignItems: 'center',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
@@ -345,16 +334,16 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  presetText: { color: colors.primary, fontSize: 18, fontWeight: '700' },
+  presetText: { color: colors.primary, fontSize: 17, fontWeight: '700' },
 
-  stepperRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  stepperRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   stepperBtn: {
     flex: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 11,
     alignItems: 'center',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
@@ -364,44 +353,43 @@ const styles = StyleSheet.create({
   },
   stepperText: { color: colors.text, fontSize: 22, fontWeight: '600' },
 
-  // Attach row
-  attachRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  attachRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   attachChip: {
     flex: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   attachChipActive: { borderColor: colors.primary, backgroundColor: '#FFF7ED' },
   attachChipText: { color: colors.textSecondary, fontSize: 14 },
-  photoPreviewBox: { marginBottom: 12 },
-  photoPreview: { width: '100%', height: 180, borderRadius: 14 },
+
+  photoPreview: { width: '100%', height: 140, borderRadius: 14, marginBottom: 8 },
+
   noteInput: {
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 10,
     color: colors.text,
     fontSize: 15,
-    height: 56,
+    height: 48,
     textAlignVertical: 'center',
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
-  // Submit
   submitBtn: {
     backgroundColor: colors.primary,
     borderRadius: 16,
-    padding: 18,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 4,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -411,21 +399,22 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: colors.border, shadowOpacity: 0 },
   submitText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 
-  // Total
-  totalBox: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    right: 24,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    paddingVertical: 24,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  totalBoxFlash: { borderColor: colors.success, backgroundColor: '#F0FDF4' },
-  totalNumber: { fontSize: 52, fontWeight: 'bold', color: colors.text },
-  totalNumberFlash: { color: colors.success },
+  toastTotal: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  toastBadges: { color: '#DDDDDD', fontSize: 14, marginTop: 4 },
 });

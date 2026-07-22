@@ -36,6 +36,7 @@ interface RecentEntry {
   photo_url?: string | null;
   location_name?: string | null;
   note?: string | null;
+  rating?: number | null;
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -212,7 +213,7 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage, reaction
       <View style={styles.recentBox}>
         {recent.map((e: any, i) => {
           const name = e.users?.display_name || e.users?.username || 'Someone';
-          const hasExtras = !!(e.photo_url || e.location_name || e.note);
+          const hasExtras = !!(e.photo_url || e.location_name || e.note || e.rating);
           const isExpanded = expandedEntry === i;
           const entryReactions = e.id ? (reactions[e.id] ?? {}) : {};
           const reactionEntries = Object.entries(entryReactions);
@@ -234,6 +235,7 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage, reaction
                       <Text style={styles.recentWings}> ate {e.amount} wings</Text>
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      {e.rating != null && <Text style={{ fontSize: 12, color: '#F5A623', fontWeight: '600' }}>{e.rating % 1 === 0 ? e.rating.toFixed(0) : e.rating.toFixed(1)}★</Text>}
                       {e.note && <Text style={{ fontSize: 12 }}>💬</Text>}
                       {e.photo_url && <Text style={{ fontSize: 12 }}>📷</Text>}
                       {e.location_name && <Text style={{ fontSize: 12 }}>📍</Text>}
