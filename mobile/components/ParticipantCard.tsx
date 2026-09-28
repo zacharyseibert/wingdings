@@ -24,6 +24,16 @@ const BADGE_DEFS: Record<string, { emoji: string; name: string; desc: string }> 
   nice:         { emoji: '😏', name: 'Nice!',         desc: 'Reached exactly 69 wings' },
   blaze_it:     { emoji: '🌿', name: 'Blaze It',      desc: 'Reached exactly 420 wings' },
   jerkin_it:    { emoji: '🫙', name: "Jerkin' It",    desc: 'Logged wings with jerk in the notes' },
+  thanksgiving: { emoji: '🦃', name: 'Thanksgiving',  desc: 'Logged wings on Thanksgiving' },
+  christmas:    { emoji: '🎄', name: 'Christmas',     desc: 'Logged wings on Christmas' },
+  new_years:    { emoji: '🎆', name: "New Year's",    desc: "Logged wings on New Year's Day" },
+  new_years_eve:{ emoji: '🥂', name: "New Year's Eve",desc: "Logged wings on New Year's Eve" },
+  fourth_of_july:{ emoji: '🎇', name: '4th of July',  desc: 'Logged wings on the 4th of July' },
+  halloween:    { emoji: '🎃', name: 'Halloween',     desc: 'Logged wings on Halloween' },
+  super_bowl:   { emoji: '🏈', name: 'Super Bowl',    desc: 'Logged wings on Super Bowl Sunday' },
+  valentines:   { emoji: '❤️',  name: "Valentine's",  desc: "Logged wings on Valentine's Day" },
+  st_patricks:  { emoji: '🍀', name: "St. Patrick's", desc: "Logged wings on St. Patrick's Day" },
+  cinco_de_mayo:{ emoji: '🌮', name: 'Cinco de Mayo', desc: 'Logged wings on Cinco de Mayo' },
 };
 
 interface Props {

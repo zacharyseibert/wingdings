@@ -19,6 +19,16 @@ export const BADGE_DEFINITIONS = {
   nice:         { emoji: '😏', name: 'Nice!',         desc: 'Reached exactly 69 wings' },
   blaze_it:     { emoji: '🌿', name: 'Blaze It',      desc: 'Reached exactly 420 wings' },
   jerkin_it:    { emoji: '🫙', name: "Jerkin' It",    desc: 'Logged wings with jerk in the notes' },
+  thanksgiving: { emoji: '🦃', name: 'Thanksgiving',  desc: 'Logged wings on Thanksgiving' },
+  christmas:    { emoji: '🎄', name: 'Christmas',     desc: 'Logged wings on Christmas' },
+  new_years:    { emoji: '🎆', name: "New Year's",    desc: "Logged wings on New Year's Day" },
+  new_years_eve:{ emoji: '🥂', name: "New Year's Eve",desc: "Logged wings on New Year's Eve" },
+  fourth_of_july:{ emoji: '🎇', name: '4th of July',  desc: 'Logged wings on the 4th of July' },
+  halloween:    { emoji: '🎃', name: 'Halloween',     desc: 'Logged wings on Halloween' },
+  super_bowl:   { emoji: '🏈', name: 'Super Bowl',    desc: 'Logged wings on Super Bowl Sunday' },
+  valentines:   { emoji: '❤️',  name: "Valentine's",  desc: "Logged wings on Valentine's Day" },
+  st_patricks:  { emoji: '🍀', name: "St. Patrick's", desc: "Logged wings on St. Patrick's Day" },
+  cinco_de_mayo:{ emoji: '🌮', name: 'Cinco de Mayo', desc: 'Logged wings on Cinco de Mayo' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -34,6 +44,20 @@ async function awardBadge(userId, badgeKey) {
   }
 
   return error?.code === '23505' ? null : BADGE_DEFINITIONS[badgeKey];
+}
+
+function getNthWeekdayOfMonth(year, month, weekday, n) {
+  // weekday: 0=Sun, 1=Mon ... 6=Sat. n: 1-based
+  let count = 0;
+  for (let d = 1; d <= 31; d++) {
+    const date = new Date(year, month, d);
+    if (date.getMonth() !== month) break;
+    if (date.getDay() === weekday) {
+      count++;
+      if (count === n) return d;
+    }
+  }
+  return null;
 }
 
 export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, note, loggedAt, localHour }) {
@@ -58,6 +82,25 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
     if (totalWings === 69) quickChecks.push('nice');
     if (totalWings === 420) quickChecks.push('blaze_it');
     if (note && /jerk/i.test(note)) quickChecks.push('jerkin_it');
+
+    // Holiday badges — based on date logged
+    const logDate = new Date(loggedAt);
+    const month = logDate.getMonth(); // 0-indexed
+    const day = logDate.getDate();
+    const year = logDate.getFullYear();
+
+    if (month === 11 && day === 25) quickChecks.push('christmas');
+    if (month === 0 && day === 1)  quickChecks.push('new_years');
+    if (month === 11 && day === 31) quickChecks.push('new_years_eve');
+    if (month === 6 && day === 4)  quickChecks.push('fourth_of_july');
+    if (month === 9 && day === 31) quickChecks.push('halloween');
+    if (month === 1 && day === 14) quickChecks.push('valentines');
+    if (month === 2 && day === 17) quickChecks.push('st_patricks');
+    if (month === 4 && day === 5)  quickChecks.push('cinco_de_mayo');
+    // Thanksgiving: 4th Thursday of November
+    if (month === 10 && day === getNthWeekdayOfMonth(year, 10, 4, 4)) quickChecks.push('thanksgiving');
+    // Super Bowl: 2nd Sunday of February
+    if (month === 1 && day === getNthWeekdayOfMonth(year, 1, 0, 2)) quickChecks.push('super_bowl');
 
     if (photoUrl) quickChecks.push('food_blogger');
     if (hour >= 0 && hour < 5) quickChecks.push('night_owl');

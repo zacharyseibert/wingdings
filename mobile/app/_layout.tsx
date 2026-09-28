@@ -15,21 +15,7 @@ export default function RootLayout() {
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
-    // Refresh session when app comes to foreground — prevents iOS background suspension from expiring tokens
-    const appStateSub = AppState.addEventListener('change', state => {
-      if (state === 'active') supabase.auth.startAutoRefresh();
-      else supabase.auth.stopAutoRefresh();
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setReady(true);
-      if (!session) {
-        setTimeout(() => setConfirmed(true), 1500);
-      } else {
-        setConfirmed(true);
-      }
-    });
+    let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
@@ -53,11 +39,34 @@ export default function RootLayout() {
     };
 
     const sub = Linking.addEventListener('url', handleUrl);
-    // Handle if app was launched from magic link
     Linking.getInitialURL().then(url => { if (url) handleUrl({ url }); });
 
+    // Race getSession against a 3s timeout so a hung network call never blocks the spinner
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise<{ data: { session: null } }>(resolve =>
+      setTimeout(() => resolve({ data: { session: null } }), 3000)
+    );
+
+    Promise.race([sessionPromise, timeoutPromise]).then(({ data: { session } }) => {
+      setSession(session);
+      setReady(true);
+      if (!session) {
+        setTimeout(() => setConfirmed(true), 1500);
+      } else {
+        setConfirmed(true);
+      }
+
+      // Set up foreground refresh AFTER getSession resolves — calling startAutoRefresh()
+      // before getSession() can cause the SDK's internal refresh lock to block getSession,
+      // hanging the spinner on cold start when the network is slow.
+      appStateSub = AppState.addEventListener('change', state => {
+        if (state === 'active') supabase.auth.startAutoRefresh();
+        else supabase.auth.stopAutoRefresh();
+      });
+    });
+
     return () => {
-      appStateSub.remove();
+      appStateSub?.remove();
       subscription.unsubscribe();
       sub.remove();
     };
