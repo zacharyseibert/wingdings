@@ -85,7 +85,7 @@ router.post('/mobile/log', async (req, res) => {
     // Find the user record linked to this auth ID
     const { data: profile } = await supabase
       .from('users')
-      .select('id, display_name, username, competition_id')
+      .select('id, display_name, username, competition_id, birthday')
       .eq('auth_id', user.id)
       .single();
 
@@ -106,6 +106,7 @@ router.post('/mobile/log', async (req, res) => {
       photoUrl: photoUrl ?? null,
       locationName: locationName ?? null,
       note: note ?? null,
+      birthday: profile.birthday ?? null,
       loggedAt: new Date().toISOString(),
       localHour: localHour ?? new Date().getHours(),
     });

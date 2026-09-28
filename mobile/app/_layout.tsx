@@ -8,11 +8,14 @@ import { ensureProfile } from '../lib/wings';
 import { registerForPushNotifications } from '../lib/notifications';
 import * as Linking from 'expo-linking';
 import { colors } from '../lib/colors';
+import BirthdayPrompt from '../components/BirthdayPrompt';
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [showBirthdayPrompt, setShowBirthdayPrompt] = useState(false);
+  const [birthdayUserId, setBirthdayUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
@@ -23,6 +26,16 @@ export default function RootLayout() {
       if (session) {
         await ensureProfile(session.user.id, session.user.email ?? '');
         registerForPushNotifications().catch(console.error);
+        // Check if birthday is set; prompt once if not
+        const { data: profile } = await supabase
+          .from('users')
+          .select('id, birthday')
+          .eq('auth_id', session.user.id)
+          .maybeSingle();
+        if (profile && !profile.birthday) {
+          setBirthdayUserId(profile.id);
+          setShowBirthdayPrompt(true);
+        }
       }
     });
 
@@ -95,6 +108,12 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+      {showBirthdayPrompt && birthdayUserId && (
+        <BirthdayPrompt
+          userId={birthdayUserId}
+          onDone={() => setShowBirthdayPrompt(false)}
+        />
+      )}
     </SafeAreaProvider>
   );
 }

@@ -31,6 +31,7 @@ export const BADGE_DEFINITIONS = {
   cinco_de_mayo:{ emoji: '🌮', name: 'Cinco de Mayo', desc: 'Logged wings on Cinco de Mayo' },
   arbor_day:    { emoji: '🌳', name: 'Arbor Day',     desc: 'Logged wings on Arbor Day' },
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
+  birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -62,7 +63,7 @@ function getNthWeekdayOfMonth(year, month, weekday, n) {
   return null;
 }
 
-export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, note, loggedAt, localHour }) {
+export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, note, birthday, loggedAt, localHour }) {
   try {
     const newBadges = [];
     const hour = localHour ?? new Date(loggedAt).getHours();
@@ -84,6 +85,10 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
     if (totalWings === 69) quickChecks.push('nice');
     if (totalWings === 420) quickChecks.push('blaze_it');
     if (note && /jerk/i.test(note)) quickChecks.push('jerkin_it');
+    if (birthday) {
+      const [bdMM, bdDD] = birthday.split('-').map(Number);
+      if (month + 1 === bdMM && day === bdDD) quickChecks.push('birthday');
+    }
 
     // Holiday badges — based on date logged
     const logDate = new Date(loggedAt);
