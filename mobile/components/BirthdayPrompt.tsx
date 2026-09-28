@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { colors } from '../lib/colors';
 import { supabase } from '../lib/supabase';
 
@@ -18,22 +19,14 @@ interface Props {
 }
 
 export default function BirthdayPrompt({ userId, onDone }: Props) {
-  const [month, setMonth] = useState(0); // 0-indexed
+  const [month, setMonth] = useState(0);
   const [day, setDay] = useState(1);
   const [saving, setSaving] = useState(false);
 
-  function prevMonth() {
-    const m = (month - 1 + 12) % 12;
-    setMonth(m);
-    if (day > daysInMonth(m)) setDay(daysInMonth(m));
+  function handleMonthChange(v: number) {
+    setMonth(v);
+    if (day > daysInMonth(v)) setDay(1);
   }
-  function nextMonth() {
-    const m = (month + 1) % 12;
-    setMonth(m);
-    if (day > daysInMonth(m)) setDay(daysInMonth(m));
-  }
-  function prevDay() { setDay(d => d === 1 ? daysInMonth(month) : d - 1); }
-  function nextDay() { setDay(d => d === daysInMonth(month) ? 1 : d + 1); }
 
   async function handleSave() {
     setSaving(true);
@@ -52,24 +45,24 @@ export default function BirthdayPrompt({ userId, onDone }: Props) {
           <Text style={styles.sub}>We'll give you a special badge when you log wings on your big day.</Text>
 
           <View style={styles.pickers}>
-            <View style={styles.pickerCol}>
-              <TouchableOpacity style={styles.arrow} onPress={prevMonth}>
-                <Text style={styles.arrowText}>‹</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerVal}>{MONTHS[month]}</Text>
-              <TouchableOpacity style={styles.arrow} onPress={nextMonth}>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.pickerCol, styles.pickerColDay]}>
-              <TouchableOpacity style={styles.arrow} onPress={prevDay}>
-                <Text style={styles.arrowText}>‹</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerVal}>{day}</Text>
-              <TouchableOpacity style={styles.arrow} onPress={nextDay}>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-            </View>
+            <Picker
+              selectedValue={month}
+              onValueChange={handleMonthChange}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              {MONTHS.map((m, i) => <Picker.Item key={m} label={m} value={i} />)}
+            </Picker>
+            <Picker
+              selectedValue={day}
+              onValueChange={setDay}
+              style={[styles.picker, styles.pickerDay]}
+              itemStyle={styles.pickerItem}
+            >
+              {Array.from({ length: daysInMonth(month) }, (_, i) => i + 1).map(d => (
+                <Picker.Item key={d} label={String(d)} value={d} />
+              ))}
+            </Picker>
           </View>
 
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
@@ -101,24 +94,11 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 48, marginBottom: 12 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 8, textAlign: 'center' },
-  sub: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  pickers: { flexDirection: 'row', gap: 12, width: '100%', marginBottom: 24 },
-  pickerCol: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.background,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-  },
-  pickerColDay: { flex: 1 },
-  arrow: { padding: 4 },
-  arrowText: { fontSize: 22, color: colors.primary, fontWeight: '600' },
-  pickerVal: { fontSize: 16, fontWeight: '600', color: colors.text, textAlign: 'center', flex: 1 },
+  sub: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 8, lineHeight: 20 },
+  pickers: { flexDirection: 'row', width: '100%', marginBottom: 16 },
+  picker: { flex: 2 },
+  pickerDay: { flex: 1 },
+  pickerItem: { fontSize: 18, color: colors.text },
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: 14,
