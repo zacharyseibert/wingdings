@@ -29,6 +29,8 @@ export const BADGE_DEFINITIONS = {
   valentines:   { emoji: '❤️',  name: "Valentine's",  desc: "Logged wings on Valentine's Day" },
   st_patricks:  { emoji: '🍀', name: "St. Patrick's", desc: "Logged wings on St. Patrick's Day" },
   cinco_de_mayo:{ emoji: '🌮', name: 'Cinco de Mayo', desc: 'Logged wings on Cinco de Mayo' },
+  arbor_day:    { emoji: '🌳', name: 'Arbor Day',     desc: 'Logged wings on Arbor Day' },
+  mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -101,6 +103,18 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
     if (month === 10 && day === getNthWeekdayOfMonth(year, 10, 4, 4)) quickChecks.push('thanksgiving');
     // Super Bowl: 2nd Sunday of February
     if (month === 1 && day === getNthWeekdayOfMonth(year, 1, 0, 2)) quickChecks.push('super_bowl');
+    // MLK Day: 3rd Monday of January
+    if (month === 0 && day === getNthWeekdayOfMonth(year, 0, 1, 3)) quickChecks.push('mlk_day');
+    // Arbor Day: last Friday of April
+    if (month === 3) {
+      let lastFriday = null;
+      for (let d = 30; d >= 1; d--) {
+        const date = new Date(year, 3, d);
+        if (date.getMonth() !== 3) continue;
+        if (date.getDay() === 5) { lastFriday = d; break; }
+      }
+      if (day === lastFriday) quickChecks.push('arbor_day');
+    }
 
     if (photoUrl) quickChecks.push('food_blogger');
     if (hour >= 0 && hour < 5) quickChecks.push('night_owl');
