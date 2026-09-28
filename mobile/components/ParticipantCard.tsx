@@ -78,8 +78,9 @@ export default function ParticipantCard({ userId, onClose }: Props) {
 
   const visible = !!userId;
   const user = profile?.user;
-  const badges: { badge_key: string }[] = profile?.badges ?? [];
+  const badges: { badge_key: string; earned_at?: string }[] = profile?.badges ?? [];
   const stats = profile?.stats;
+  const [selectedBadge, setSelectedBadge] = useState<{ badge_key: string; earned_at?: string } | null>(null);
   const name = user?.display_name || user?.username || '?';
 
   return (
@@ -132,10 +133,10 @@ export default function ParticipantCard({ userId, onClose }: Props) {
                       const def = BADGE_DEFS[b.badge_key];
                       if (!def) return null;
                       return (
-                        <View key={b.badge_key} style={styles.badgeCard}>
+                        <TouchableOpacity key={b.badge_key} style={styles.badgeCard} onPress={() => setSelectedBadge(b)} activeOpacity={0.7}>
                           <Text style={styles.badgeEmoji}>{def.emoji}</Text>
                           <Text style={styles.badgeName}>{def.name}</Text>
-                        </View>
+                        </TouchableOpacity>
                       );
                     })}
                   </View>
@@ -149,6 +150,31 @@ export default function ParticipantCard({ userId, onClose }: Props) {
           )}
         </Animated.View>
       </TouchableOpacity>
+
+      {/* Badge detail popover */}
+      {selectedBadge && (() => {
+        const def = BADGE_DEFS[selectedBadge.badge_key];
+        const earnedDate = selectedBadge.earned_at
+          ? new Date(selectedBadge.earned_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+          : null;
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedBadge(null)}>
+            <TouchableOpacity style={styles.badgeOverlay} activeOpacity={1} onPress={() => setSelectedBadge(null)}>
+              <TouchableOpacity activeOpacity={1} style={styles.badgePopover}>
+                <Text style={styles.badgePopoverEmoji}>{def?.emoji}</Text>
+                <Text style={styles.badgePopoverName}>{def?.name}</Text>
+                <Text style={styles.badgePopoverDesc}>{def?.desc}</Text>
+                {earnedDate && (
+                  <Text style={styles.badgePopoverDate}>Earned {earnedDate}</Text>
+                )}
+                <TouchableOpacity style={styles.badgePopoverClose} onPress={() => setSelectedBadge(null)}>
+                  <Text style={styles.badgePopoverCloseText}>Got it</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+        );
+      })()}
     </Modal>
   );
 }
@@ -193,4 +219,19 @@ const styles = StyleSheet.create({
   badgeEmoji: { fontSize: 24, marginBottom: 4 },
   badgeName: { fontSize: 11, color: colors.text, fontWeight: '500', textAlign: 'center' },
   noBadges: { color: colors.textSecondary, textAlign: 'center', marginTop: 12, marginBottom: 24 },
+
+  badgeOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  badgePopover: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    alignItems: 'center',
+  },
+  badgePopoverEmoji: { fontSize: 52, marginBottom: 12 },
+  badgePopoverName: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 8, textAlign: 'center' },
+  badgePopoverDesc: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 8 },
+  badgePopoverDate: { fontSize: 13, color: colors.textSecondary, marginBottom: 20, fontStyle: 'italic' },
+  badgePopoverClose: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 },
+  badgePopoverCloseText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
