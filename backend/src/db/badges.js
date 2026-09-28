@@ -32,6 +32,7 @@ export const BADGE_DEFINITIONS = {
   arbor_day:    { emoji: '🌳', name: 'Arbor Day',     desc: 'Logged wings on Arbor Day' },
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
   birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
+  camera_shy:   { emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -155,6 +156,20 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
           const badge = await awardBadge(userId, 'wing_mayor');
           if (badge) newBadges.push({ key: 'wing_mayor', ...badge });
         }
+      }
+    }
+
+    // Camera Shy: 5+ entries with no photo
+    if (!photoUrl) {
+      const { count } = await supabase
+        .from('wing_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('photo_url', null)
+        .gt('amount', 0);
+      if (count >= 5) {
+        const badge = await awardBadge(userId, 'camera_shy');
+        if (badge) newBadges.push({ key: 'camera_shy', ...badge });
       }
     }
 

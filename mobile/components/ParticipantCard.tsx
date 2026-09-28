@@ -37,6 +37,7 @@ const BADGE_DEFS: Record<string, { emoji: string; name: string; desc: string }> 
   arbor_day:    { emoji: '🌳', name: 'Arbor Day',     desc: 'Logged wings on Arbor Day' },
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
   birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
+  camera_shy:   { emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
 };
 
 interface Props {
