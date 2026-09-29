@@ -1,5 +1,17 @@
 import { supabase } from './db/client.js';
 
+function wingVerb(amount) {
+  if (amount <= 4) {
+    return ['nibbled', 'snacked on', 'picked up', 'grabbed'][Math.floor(Math.random() * 4)];
+  } else if (amount <= 9) {
+    return ['knocked back', 'put away', 'handled', 'took down'][Math.floor(Math.random() * 4)];
+  } else if (amount <= 14) {
+    return ['demolished', 'worked through', 'powered through', 'dispatched'][Math.floor(Math.random() * 4)];
+  } else {
+    return ['crushed', 'destroyed', 'annihilated', 'devoured', 'obliterated'][Math.floor(Math.random() * 5)];
+  }
+}
+
 export async function sendWingNotification({ loggerUserId, loggerName, amount }) {
   // Fetch all push tokens except the user who just logged
   const { data: users } = await supabase
@@ -16,7 +28,7 @@ export async function sendWingNotification({ loggerUserId, loggerName, amount })
   const messages = tokens.map(to => ({
     to,
     title: '🍗 Wings Alert',
-    body: `${loggerName} just crushed ${amount} wing${amount === 1 ? '' : 's'}!`,
+    body: `${loggerName} just ${wingVerb(amount)} ${amount} wing${amount === 1 ? '' : 's'}!`,
     sound: 'default',
     data: { type: 'wing_log' },
   }));

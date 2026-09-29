@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View, Text, StyleSheet, Image,
   TouchableOpacity, Alert, ScrollView, RefreshControl,
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   async function handleEditAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();

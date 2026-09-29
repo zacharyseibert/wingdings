@@ -73,6 +73,11 @@ export default function LogScreen() {
     setToast({ total, badges });
     toastAnim.setValue(0);
     Animated.spring(toastAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }).start();
+    if (badges.length > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     toastTimer.current = setTimeout(() => {
       Animated.timing(toastAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => setToast(null));
     }, 2800);

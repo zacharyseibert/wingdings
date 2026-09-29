@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useAppStateRefresh } from '../../lib/useAppStateRefresh';
 import {
   View, Text, StyleSheet, ScrollView,
@@ -95,6 +96,7 @@ export default function StatsScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
   useAppStateRefresh(load);
 
   async function handleDelete(entry: any) {
