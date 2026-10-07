@@ -76,10 +76,13 @@ export default function RootLayout() {
         if (state === 'active') supabase.auth.startAutoRefresh();
         else supabase.auth.stopAutoRefresh();
       });
-      // Already in foreground when listener is registered, so kick off refresh now.
-      // Without this, startAutoRefresh is never called until the next background→foreground
-      // transition, causing expired tokens to persist and users to get logged out.
-      supabase.auth.startAutoRefresh();
+      // Explicitly refresh once on launch if we have a session, since the AppState
+      // 'active' event won't fire (we're already active). Use refreshSession() instead
+      // of startAutoRefresh() — the latter fires SIGNED_OUT if the refresh token is
+      // expired, immediately logging the user out. refreshSession() failure is silent.
+      if (session) {
+        supabase.auth.refreshSession().catch(() => {});
+      }
     });
 
     return () => {
