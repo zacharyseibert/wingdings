@@ -12,6 +12,30 @@ export async function fetchWithTimeout(url: string, options?: RequestInit, ms = 
   }
 }
 
+// Fetch with auth token. On 401, refresh the session and retry once.
+async function getAccessToken(): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not logged in');
+  return session.access_token;
+}
+
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getAccessToken();
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${token}` },
+  });
+  if (res.status !== 401) return res;
+
+  // Token expired — refresh and retry once
+  const { data: { session } } = await supabase.auth.refreshSession();
+  if (!session) return res; // refresh failed, return the 401
+  return fetch(url, {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${session.access_token}` },
+  });
+}
+
 /**
  * On mobile login, link this auth session to the right user:
  * 1. If a Slack user exists with this email → link auth_id to them
@@ -103,12 +127,9 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
     photoUrl = await uploadWingPhoto(userId, photoUri);
   }
 
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/log`, {
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/log`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       amount,
       photoUrl,
@@ -131,13 +152,7 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
 }
 
 export async function getMyStats() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not logged in');
-
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/stats`, {
-    headers: { Authorization: `Bearer ${session.access_token}` },
-  });
-
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/stats`);
   if (!res.ok) throw new Error('Failed to fetch stats');
   return res.json();
 }
@@ -154,15 +169,9 @@ export async function getLeaderboard(competitionId?: number | null) {
 }
 
 export async function joinCompetition(code: string) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not logged in');
-
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/join`, {
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/join`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
   });
 
@@ -176,15 +185,9 @@ export async function joinCompetition(code: string) {
 }
 
 export async function leaveCompetition() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not logged in');
-
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/leave`, {
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/competition/leave`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 
   if (!res.ok) {
