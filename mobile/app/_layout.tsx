@@ -76,13 +76,6 @@ export default function RootLayout() {
         if (state === 'active') supabase.auth.startAutoRefresh();
         else supabase.auth.stopAutoRefresh();
       });
-      // Explicitly refresh once on launch if we have a session, since the AppState
-      // 'active' event won't fire (we're already active). Use refreshSession() instead
-      // of startAutoRefresh() — the latter fires SIGNED_OUT if the refresh token is
-      // expired, immediately logging the user out. refreshSession() failure is silent.
-      if (session) {
-        supabase.auth.refreshSession().catch(() => {});
-      }
     });
 
     return () => {
