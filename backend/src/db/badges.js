@@ -1,4 +1,5 @@
 import { supabase } from './client.js';
+import { entryBadgeKeys } from './badgeRules.js';
 
 export const BADGE_DEFINITIONS = {
   first_wing:   { emoji: '🍗', name: 'First Wing',    desc: 'Logged your first wings' },
@@ -33,6 +34,7 @@ export const BADGE_DEFINITIONS = {
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
   birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
   camera_shy:   { emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
+  oops_my_bad:  { emoji: '🙇', name: 'Oops, My Bad',  desc: 'A badge you earned slipped through the cracks. Sorry!' },
 };
 
 async function awardBadge(userId, badgeKey) {
@@ -50,81 +52,10 @@ async function awardBadge(userId, badgeKey) {
   return error?.code === '23505' ? null : BADGE_DEFINITIONS[badgeKey];
 }
 
-function getNthWeekdayOfMonth(year, month, weekday, n) {
-  // weekday: 0=Sun, 1=Mon ... 6=Sat. n: 1-based
-  let count = 0;
-  for (let d = 1; d <= 31; d++) {
-    const date = new Date(year, month, d);
-    if (date.getMonth() !== month) break;
-    if (date.getDay() === weekday) {
-      count++;
-      if (count === n) return d;
-    }
-  }
-  return null;
-}
-
 export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl, locationName, note, birthday, loggedAt, localHour }) {
   try {
     const newBadges = [];
-    const hour = localHour ?? new Date(loggedAt).getHours();
-
-    // Quick checks - these don't need DB queries
-    const quickChecks = [];
-
-    if (totalWings >= 1) quickChecks.push('first_wing');
-    if (totalWings >= 10) quickChecks.push('ten_club');
-    if (totalWings >= 100) quickChecks.push('century');
-    if (totalWings >= 500) quickChecks.push('five_hundred');
-    if (totalWings >= 1000) quickChecks.push('one_thousand');
-    if (totalWings >= 5000) quickChecks.push('five_thousand');
-
-    if (amount >= 20) quickChecks.push('big_session');
-    if (amount >= 50) quickChecks.push('heavyweight');
-    if (amount >= 100) quickChecks.push('glutton');
-
-    if (totalWings === 69) quickChecks.push('nice');
-    if (totalWings === 420) quickChecks.push('blaze_it');
-    if (note && /jerk/i.test(note)) quickChecks.push('jerkin_it');
-    if (birthday) {
-      const [bdMM, bdDD] = birthday.split('-').map(Number);
-      if (month + 1 === bdMM && day === bdDD) quickChecks.push('birthday');
-    }
-
-    // Holiday badges — based on date logged
-    const logDate = new Date(loggedAt);
-    const month = logDate.getMonth(); // 0-indexed
-    const day = logDate.getDate();
-    const year = logDate.getFullYear();
-
-    if (month === 11 && day === 25) quickChecks.push('christmas');
-    if (month === 0 && day === 1)  quickChecks.push('new_years');
-    if (month === 11 && day === 31) quickChecks.push('new_years_eve');
-    if (month === 6 && day === 4)  quickChecks.push('fourth_of_july');
-    if (month === 9 && day === 31) quickChecks.push('halloween');
-    if (month === 1 && day === 14) quickChecks.push('valentines');
-    if (month === 2 && day === 17) quickChecks.push('st_patricks');
-    if (month === 4 && day === 5)  quickChecks.push('cinco_de_mayo');
-    // Thanksgiving: 4th Thursday of November
-    if (month === 10 && day === getNthWeekdayOfMonth(year, 10, 4, 4)) quickChecks.push('thanksgiving');
-    // Super Bowl: 2nd Sunday of February
-    if (month === 1 && day === getNthWeekdayOfMonth(year, 1, 0, 2)) quickChecks.push('super_bowl');
-    // MLK Day: 3rd Monday of January
-    if (month === 0 && day === getNthWeekdayOfMonth(year, 0, 1, 3)) quickChecks.push('mlk_day');
-    // Arbor Day: last Friday of April
-    if (month === 3) {
-      let lastFriday = null;
-      for (let d = 30; d >= 1; d--) {
-        const date = new Date(year, 3, d);
-        if (date.getMonth() !== 3) continue;
-        if (date.getDay() === 5) { lastFriday = d; break; }
-      }
-      if (day === lastFriday) quickChecks.push('arbor_day');
-    }
-
-    if (photoUrl) quickChecks.push('food_blogger');
-    if (hour >= 0 && hour < 5) quickChecks.push('night_owl');
-    if (hour >= 6 && hour < 9) quickChecks.push('early_bird');
+    const quickChecks = entryBadgeKeys({ amount, totalWings, photoUrl, note, birthday, loggedAt, localHour });
 
     // Award quick checks
     for (const key of quickChecks) {

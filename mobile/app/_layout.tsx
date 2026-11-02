@@ -9,6 +9,7 @@ import { registerForPushNotifications } from '../lib/notifications';
 import * as Linking from 'expo-linking';
 import { colors } from '../lib/colors';
 import BirthdayPrompt from '../components/BirthdayPrompt';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
@@ -56,8 +57,18 @@ export default function RootLayout() {
 
     // Race getSession against a 3s timeout so a hung network call never blocks the spinner
     const sessionPromise = supabase.auth.getSession();
-    const timeoutPromise = new Promise<{ data: { session: null } }>(resolve =>
-      setTimeout(() => resolve({ data: { session: null } }), 3000)
+    // On timeout, fall back to the stored session instead of treating the user as signed out.
+    // After long inactivity getSession() must refresh over the network, which can exceed 3s.
+    const timeoutPromise = new Promise<{ data: { session: Session | null } }>(resolve =>
+      setTimeout(async () => {
+        try {
+          const raw = await AsyncStorage.getItem((supabase.auth as any).storageKey);
+          const stored = raw ? JSON.parse(raw) : null;
+          resolve({ data: { session: stored?.refresh_token ? stored : null } });
+        } catch {
+          resolve({ data: { session: null } });
+        }
+      }, 3000)
     );
 
     Promise.race([sessionPromise, timeoutPromise]).then(({ data: { session } }) => {

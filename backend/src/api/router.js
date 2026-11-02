@@ -108,7 +108,7 @@ router.post('/mobile/log', async (req, res) => {
       note: note ?? null,
       birthday: profile.birthday ?? null,
       loggedAt: new Date().toISOString(),
-      localHour: localHour ?? new Date().getHours(),
+      localHour: typeof localHour === 'number' ? localHour : undefined,
     });
 
     res.json({ total_wings: updated.total_wings, newBadges });

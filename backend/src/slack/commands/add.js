@@ -54,7 +54,6 @@ export async function handleAdd(args, body, client, respond) {
     photoUrl: null,
     locationName: null,
     loggedAt: new Date().toISOString(),
-    localHour: new Date().getHours(),
   });
 
   if (!isHwfflMember) {
