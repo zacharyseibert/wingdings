@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../lib/colors';
 
-const { width: W, height: H } = Dimensions.get('window');
 const CONFETTI_COUNT = 60;
 const COLORS = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#FF922B', '#CC5DE8', '#FF6DD8'];
 
@@ -13,6 +12,7 @@ function randomBetween(a: number, b: number) {
 }
 
 function ConfettiPiece({ delay }: { delay: number }) {
+  const { width: W, height: H } = useWindowDimensions();
   const x = useRef(new Animated.Value(randomBetween(0, W))).current;
   const y = useRef(new Animated.Value(-20)).current;
   const rotate = useRef(new Animated.Value(0)).current;

@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  FlatList, ScrollView, Dimensions,
+  FlatList, ScrollView, useWindowDimensions,
 } from 'react-native';
 import { colors } from '../lib/colors';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLS = 8;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32) / COLS);
 
 const CATEGORIES: { label: string; icon: string; emojis: string[] }[] = [
   {
@@ -56,6 +54,8 @@ interface EmojiPickerProps {
 
 export default function EmojiPicker({ visible, onSelect, onClose }: EmojiPickerProps) {
   const [categoryIndex, setCategoryIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const cellSize = Math.floor((width - 32) / COLS);
 
   const currentEmojis = CATEGORIES[categoryIndex].emojis;
 
@@ -86,7 +86,7 @@ export default function EmojiPicker({ visible, onSelect, onClose }: EmojiPickerP
             keyExtractor={(item, index) => `${item}-${index}`}
             numColumns={COLS}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.cell} onPress={() => { onSelect(item); onClose(); }}>
+              <TouchableOpacity style={[styles.cell, { width: cellSize, height: cellSize }]} onPress={() => { onSelect(item); onClose(); }}>
                 <Text style={styles.emoji}>{item}</Text>
               </TouchableOpacity>
             )}
@@ -125,6 +125,6 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 20 },
   categoryLabel: { fontSize: 12, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
   grid: { flex: 1 },
-  cell: { width: CELL_SIZE, height: CELL_SIZE, alignItems: 'center', justifyContent: 'center' },
+  cell: { alignItems: 'center', justifyContent: 'center' },
   emoji: { fontSize: 26 },
 });

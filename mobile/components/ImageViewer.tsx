@@ -1,12 +1,10 @@
-import { Modal, View, Image, TouchableOpacity, StyleSheet, StatusBar, Dimensions } from 'react-native';
+import { Modal, View, Image, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props {
   uri: string | null;
   onClose: () => void;
 }
-
-const { width, height } = Dimensions.get('window');
 
 export default function ImageViewer({ uri, onClose }: Props) {
   return (
@@ -40,8 +38,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   image: {
-    width,
-    height: height * 0.85,
+    width: '100%',
+    height: '85%',
   },
   closeBtn: {
     position: 'absolute',
