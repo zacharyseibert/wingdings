@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { colors } from '../lib/colors';
+import PlaceSearch, { NativePlace } from '../modules/place-search';
 
 interface Place {
   id: string;
@@ -30,57 +31,25 @@ interface Props {
 
 const RADIUS_METERS = 8047; // 5 miles
 
-async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
-  const query = `
-    [out:json][timeout:15];
-    (
-      node["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:${RADIUS_METERS},${lat},${lng});
-      way["amenity"~"restaurant|bar|pub|cafe|fast_food|food_court|brewery|biergarten|ice_cream"]["name"](around:${RADIUS_METERS},${lat},${lng});
-      node["shop"~"convenience|supermarket"]["name"](around:${RADIUS_METERS},${lat},${lng});
-    );
-    out center 60;
-  `;
-
-  const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
-  if (!res.ok) return [];
-  const data = await res.json();
-
-  return (data.elements ?? [])
-    .filter((e: any) => e.tags?.name)
-    .map((e: any) => {
-      const eLat = e.lat ?? e.center?.lat ?? lat;
-      const eLng = e.lon ?? e.center?.lon ?? lng;
-      const dist = Math.round(
-        Math.sqrt(Math.pow((eLat - lat) * 111320, 2) + Math.pow((eLng - lng) * 111320 * Math.cos(lat * Math.PI / 180), 2))
-      );
-      return {
-        id: String(e.id),
-        name: e.tags.name,
-        type: e.tags.amenity?.replace('_', ' ') ?? 'place',
-        distance: dist,
-        lat: eLat,
-        lng: eLng,
-      };
-    })
-    .sort((a: Place, b: Place) => (a.distance ?? 0) - (b.distance ?? 0));
+function categoryLabel(category: string | null) {
+  if (!category) return 'place';
+  return category.replace('MKPOICategory', '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
 }
 
-async function searchGlobal(query: string): Promise<Place[]> {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=15&addressdetails=1`;
-  const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'WingdingsApp/1.0' } });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data ?? []).map((e: any, i: number) => {
-    const parts = [e.address?.name || e.name, e.address?.city || e.address?.town, e.address?.state].filter(Boolean);
-    return {
-      id: `nom-${i}`,
-      name: parts[0] || e.display_name.split(',')[0],
-      type: parts.slice(1).join(', ') || e.type,
-      distance: undefined,
-      lat: parseFloat(e.lat),
-      lng: parseFloat(e.lon),
-    };
-  });
+function toPlace(p: NativePlace, i: number, type: string): Place {
+  return { id: `${p.lat},${p.lng}-${i}`, name: p.name, type, distance: p.distance ?? undefined, lat: p.lat, lng: p.lng };
+}
+
+async function fetchNearbyPlaces(lat: number, lng: number): Promise<Place[]> {
+  const results = await PlaceSearch.nearby(lat, lng, RADIUS_METERS);
+  return results
+    .map((p, i) => toPlace(p, i, categoryLabel(p.category)))
+    .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+}
+
+async function searchPlaces(query: string, coords: { lat: number; lng: number } | null): Promise<Place[]> {
+  const results = await PlaceSearch.search(query, coords?.lat ?? null, coords?.lng ?? null);
+  return results.map((p, i) => toPlace(p, i, [p.city, p.state].filter(Boolean).join(', ') || categoryLabel(p.category)));
 }
 
 export default function LocationPicker({ visible, onSelect, onClose }: Props) {
@@ -92,6 +61,7 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
   const [searching, setSearching] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestSearch = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,12 +102,14 @@ export default function LocationPicker({ visible, onSelect, onClose }: Props) {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!search.trim()) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
+      const requestId = ++latestSearch.current;
       setSearching(true);
-      const results = await searchGlobal(search.trim());
+      const results = await searchPlaces(search.trim(), coords).catch(() => []);
+      if (requestId !== latestSearch.current) return;
       setSearchResults(results);
       setSearching(false);
     }, 400);
-  }, [search]);
+  }, [search, coords]);
 
   const isSearching = search.trim().length > 0;
   const filtered = isSearching ? searchResults : places;
