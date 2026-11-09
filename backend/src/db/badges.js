@@ -34,6 +34,8 @@ export const BADGE_DEFINITIONS = {
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
   birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
   camera_shy:   { emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
+  wing_buddy:   { emoji: '🤝', name: 'Wing Buddy',    desc: 'Shared a tagged wing session with someone' },
+  wing_squad:   { emoji: '👥', name: 'Wing Squad',    desc: 'Ate wings in a tagged session of 4 or more' },
   oops_my_bad:  { emoji: '🙇', name: 'Oops, My Bad',  desc: 'A badge you earned slipped through the cracks. Sorry!' },
 };
 
@@ -122,6 +124,21 @@ export async function checkAndAwardBadges(userId, { amount, totalWings, photoUrl
     console.error('[badges] checkAndAward error:', err);
     return [];
   }
+}
+
+// Returns [{ userId, badges }] for every participant who earned something new.
+export async function awardSessionBadges(participantIds) {
+  const keys = ['wing_buddy', ...(participantIds.length >= 4 ? ['wing_squad'] : [])];
+  const results = [];
+  for (const userId of participantIds) {
+    const badges = [];
+    for (const key of keys) {
+      const badge = await awardBadge(userId, key);
+      if (badge) badges.push({ key, ...badge });
+    }
+    if (badges.length) results.push({ userId, badges });
+  }
+  return results;
 }
 
 export async function getUserBadges(userId) {

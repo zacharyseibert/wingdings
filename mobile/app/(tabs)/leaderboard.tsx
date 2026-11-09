@@ -37,6 +37,7 @@ interface RecentEntry {
   location_name?: string | null;
   note?: string | null;
   rating?: number | null;
+  session?: { total: number; participants: { name: string; amount: number }[] };
   users: { display_name: string; username: string; avatar_url: string | null };
 }
 
@@ -213,7 +214,8 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage, reaction
       <View style={styles.recentBox}>
         {recent.map((e: any, i) => {
           const name = e.users?.display_name || e.users?.username || 'Someone';
-          const hasExtras = !!(e.photo_url || e.location_name || e.note || e.rating);
+          const hasExtras = !!(e.photo_url || e.location_name || e.note || e.rating || e.session);
+          const sessionNames = e.session?.participants.map((p: any) => p.name) as string[] | undefined;
           const isExpanded = expandedEntry === i;
           const entryReactions = e.id ? (reactions[e.id] ?? {}) : {};
           const reactionEntries = Object.entries(entryReactions);
@@ -231,8 +233,8 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage, reaction
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={[styles.recentText, { flex: 1 }]}>
-                      <Text style={styles.recentName}>{name}</Text>
-                      <Text style={styles.recentWings}> ate {e.amount} wings</Text>
+                      <Text style={styles.recentName}>{sessionNames ? `${sessionNames.slice(0, -1).join(', ')} and ${sessionNames[sessionNames.length - 1]}` : name}</Text>
+                      <Text style={styles.recentWings}> {sessionNames ? `ate ${e.session.total} wings together` : `ate ${e.amount} wings`}</Text>
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                       {e.rating != null && <Text style={{ fontSize: 12, color: '#F5A623', fontWeight: '600' }}>{e.rating % 1 === 0 ? e.rating.toFixed(0) : e.rating.toFixed(1)}★</Text>}
@@ -244,6 +246,9 @@ function Footer({ recent, expandedEntry, setExpandedEntry, onViewImage, reaction
                   </View>
                   {isExpanded && (
                     <>
+                      {e.session?.participants.map((p: any, idx: number) => (
+                        <Text key={idx} style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>🍗 {p.name}: {p.amount}</Text>
+                      ))}
                       {e.note && <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>💬 {e.note}</Text>}
                       {e.location_name && <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>📍 {e.location_name}</Text>}
                       {e.photo_url && (
@@ -334,7 +339,7 @@ export default function LeaderboardScreen() {
         getLeaderboard(leaderboardId),
         fetchWithTimeout(`${API_URL}/api/stats${statsQuery}`).then(r => r.json()).catch(() => null),
         fetchWithTimeout(`${API_URL}/api/fun-stats${statsQuery}`).then(r => r.json()).catch(() => null),
-        fetchWithTimeout(`${API_URL}/api/recent?limit=8`).then(r => r.json()).catch(() => null),
+        fetchWithTimeout(`${API_URL}/api/recent?limit=8&sessions=1`).then(r => r.json()).catch(() => null),
       ]);
       setBoard(boardData);
       if (statsRes) setGlobalStats(statsRes);

@@ -9,7 +9,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { logWings, getMyStats } from '../../lib/wings';
+import { logWings, getMyStats, getPendingTags, confirmTag, declineTag } from '../../lib/wings';
+import { router, useFocusEffect } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 
 const TOTAL_CACHE_KEY = 'wingdings:total_wings';
 import * as Haptics from 'expo-haptics';
@@ -18,9 +20,12 @@ import LocationPicker from '../../components/LocationPicker';
 import BadgeCelebration from '../../components/BadgeCelebration';
 import WingMayorCelebration from '../../components/WingMayorCelebration';
 import StarRating from '../../components/StarRating';
+import TagPicker from '../../components/TagPicker';
+import TagInvite from '../../components/TagInvite';
 import { colors } from '../../lib/colors';
 
 const PRESETS = [1, 5, 6, 10, 12];
+const HWFFL_COMPETITION_ID = 1;
 
 export default function LogScreen() {
   const [total, setTotal] = useState(0);
@@ -35,6 +40,13 @@ export default function LogScreen() {
   const [newBadges, setNewBadges] = useState<any[]>([]);
   const [wingMayorLocation, setWingMayorLocation] = useState<string | null>(null);
   const [toast, setToast] = useState<{ total: number; badges: any[] } | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [inHwffl, setInHwffl] = useState(false);
+  const [taggedUserIds, setTaggedUserIds] = useState<string[]>([]);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [pendingTags, setPendingTags] = useState<any[]>([]);
+  const [respondingToTag, setRespondingToTag] = useState(false);
+  const [laterDismissed, setLaterDismissed] = useState(false);
   const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,15 +54,37 @@ export default function LogScreen() {
     try {
       const cached = await AsyncStorage.getItem(TOTAL_CACHE_KEY);
       if (cached !== null) setTotal(parseInt(cached, 10));
-      const { user } = await getMyStats();
+      const { user, competition } = await getMyStats();
+      setMyUserId(user?.id ?? null);
+      setInHwffl(competition?.id === HWFFL_COMPETITION_ID);
       const fresh = user?.total_wings ?? 0;
       setTotal(fresh);
       AsyncStorage.setItem(TOTAL_CACHE_KEY, String(fresh));
     } catch {}
   }, []);
 
+  const loadPendingTags = useCallback(() => {
+    getPendingTags().then(setPendingTags).catch(() => {});
+  }, []);
+
   useEffect(() => { loadUser(); }, [loadUser]);
   useAppStateRefresh(loadUser);
+  useAppStateRefresh(loadPendingTags);
+  useFocusEffect(loadPendingTags);
+
+  useEffect(() => {
+    const isTag = (n: Notifications.Notification) => n.request.content.data?.type === 'wing_tag';
+    const received = Notifications.addNotificationReceivedListener(n => {
+      if (isTag(n)) { setLaterDismissed(false); loadPendingTags(); }
+    });
+    const tapped = Notifications.addNotificationResponseReceivedListener(r => {
+      if (!isTag(r.notification)) return;
+      router.navigate('/(tabs)');
+      setLaterDismissed(false);
+      loadPendingTags();
+    });
+    return () => { received.remove(); tapped.remove(); };
+  }, [loadPendingTags]);
 
   function addToSession(amount: number) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -65,6 +99,7 @@ export default function LogScreen() {
     setLocationCoords(null);
     setNote('');
     setRating(null);
+    setTaggedUserIds([]);
     setNewBadges([]);
   }
 
@@ -123,6 +158,41 @@ export default function LogScreen() {
     else if (!isNaN(n) && n >= 0) setSession(n);
   }
 
+  async function celebrateLog(result: { total_wings: number; newBadges: any[] }, loggedAt: string | null) {
+    setTotal(result.total_wings);
+    AsyncStorage.setItem(TOTAL_CACHE_KEY, String(result.total_wings));
+    const mayorBadge = result.newBadges.find((b: any) => b.key === 'wing_mayor');
+    const otherBadges = result.newBadges.filter((b: any) => b.key !== 'wing_mayor');
+
+    showToast(result.total_wings, otherBadges);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    if (mayorBadge) setWingMayorLocation(loggedAt);
+    if (otherBadges.length > 0) setNewBadges(otherBadges);
+  }
+
+  async function handleConfirmTag(amount: number) {
+    const tag = pendingTags[0];
+    setRespondingToTag(true);
+    try {
+      const result = await confirmTag(tag.id, amount);
+      setPendingTags(prev => prev.filter(t => t.id !== tag.id));
+      await celebrateLog(result, tag.entry?.location_name ?? null);
+    } catch (err: any) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', err.message ?? 'Something went wrong');
+      loadPendingTags();
+    } finally {
+      setRespondingToTag(false);
+    }
+  }
+
+  function handleDeclineTag() {
+    const tag = pendingTags[0];
+    setPendingTags(prev => prev.filter(t => t.id !== tag.id));
+    declineTag(tag.id).catch(() => {});
+  }
+
   async function handleSubmit() {
     if (session <= 0) {
       Alert.alert('Nothing to log', 'Add some wings first!');
@@ -132,23 +202,15 @@ export default function LogScreen() {
     setSubmitting(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined, locationCoords ?? undefined, rating ?? undefined);
-      setTotal(result.total_wings);
-      AsyncStorage.setItem(TOTAL_CACHE_KEY, String(result.total_wings));
+      const result = await logWings(session, photoUri ?? undefined, locationName ?? undefined, note.trim() || undefined, locationCoords ?? undefined, rating ?? undefined, taggedUserIds);
       setSession(0);
       setPhotoUri(null);
       setLocationName(null);
       setLocationCoords(null);
       setNote('');
       setRating(null);
-      const mayorBadge = result.newBadges.find((b: any) => b.key === 'wing_mayor');
-      const otherBadges = result.newBadges.filter((b: any) => b.key !== 'wing_mayor');
-
-      showToast(result.total_wings, otherBadges);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      if (mayorBadge) setWingMayorLocation(locationName);
-      if (otherBadges.length > 0) setNewBadges(otherBadges);
+      setTaggedUserIds([]);
+      await celebrateLog(result, locationName);
     } catch (err: any) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message ?? 'Something went wrong');
@@ -221,6 +283,11 @@ export default function LogScreen() {
                 <Text style={styles.attachChipText}>📍 Add location</Text>
               </TouchableOpacity>
             )}
+            {inHwffl && (
+              <TouchableOpacity style={[styles.attachChip, taggedUserIds.length > 0 && styles.attachChipActive]} onPress={() => setShowTagPicker(true)}>
+                <Text style={styles.attachChipText} numberOfLines={1}>{taggedUserIds.length > 0 ? `👥 ${taggedUserIds.length} tagged` : '👥 Tag'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {photoUri && (
@@ -264,6 +331,25 @@ export default function LogScreen() {
         onSelect={(loc) => { setLocationName(loc.name); setLocationCoords(loc.lat && loc.lng ? { lat: loc.lat, lng: loc.lng } : null); }}
         onClose={() => setShowLocationPicker(false)}
       />
+
+      <TagPicker
+        visible={showTagPicker}
+        competitionId={HWFFL_COMPETITION_ID}
+        myUserId={myUserId}
+        selectedIds={taggedUserIds}
+        onChange={setTaggedUserIds}
+        onClose={() => setShowTagPicker(false)}
+      />
+
+      {pendingTags.length > 0 && !laterDismissed && (
+        <TagInvite
+          tag={pendingTags[0]}
+          submitting={respondingToTag}
+          onConfirm={handleConfirmTag}
+          onDecline={handleDeclineTag}
+          onLater={() => setLaterDismissed(true)}
+        />
+      )}
 
       {toast && (
         <Animated.View style={[

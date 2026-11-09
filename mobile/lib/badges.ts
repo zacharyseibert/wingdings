@@ -15,6 +15,8 @@ export const ALL_BADGES = [
   { key: 'early_bird',   emoji: '🌅', name: 'Early Bird',    desc: 'Logged wings before 9am' },
   { key: 'number_one',   emoji: '🏆', name: '#1',            desc: 'Held the top leaderboard spot' },
   { key: 'camera_shy',   emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
+  { key: 'wing_buddy',   emoji: '🤝', name: 'Wing Buddy',    desc: 'Shared a tagged wing session with someone' },
+  { key: 'wing_squad',   emoji: '👥', name: 'Wing Squad',    desc: 'Ate wings in a tagged session of 4 or more' },
   { key: 'birthday',     emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
   { key: 'thanksgiving', emoji: '🦃', name: 'Thanksgiving',  desc: 'Logged wings on Thanksgiving' },
   { key: 'christmas',    emoji: '🎄', name: 'Christmas',     desc: 'Logged wings on Christmas' },

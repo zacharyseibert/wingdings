@@ -116,7 +116,7 @@ export async function uploadWingPhoto(userId: string, uri: string): Promise<stri
   return data.publicUrl;
 }
 
-export async function logWings(amount: number, photoUri?: string, locationName?: string, note?: string, locationCoords?: { lat: number; lng: number }, rating?: number): Promise<number> {
+export async function logWings(amount: number, photoUri?: string, locationName?: string, note?: string, locationCoords?: { lat: number; lng: number }, rating?: number, taggedUserIds?: string[]): Promise<any> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not logged in');
 
@@ -139,6 +139,7 @@ export async function logWings(amount: number, photoUri?: string, locationName?:
       latitude: locationCoords?.lat,
       longitude: locationCoords?.lng,
       rating: rating ?? null,
+      taggedUserIds: taggedUserIds?.length ? taggedUserIds : undefined,
     }),
   });
 
@@ -195,4 +196,36 @@ export async function leaveCompetition() {
   }
 
   return true;
+}
+
+export async function getCompetitionMembers(competitionId: number): Promise<any[]> {
+  const res = await fetchWithTimeout(`${process.env.EXPO_PUBLIC_API_URL}/api/competition/${competitionId}/participants`);
+  if (!res.ok) throw new Error('Failed to load members');
+  const { data } = await res.json();
+  return data ?? [];
+}
+
+export async function getPendingTags(): Promise<any[]> {
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/tags/pending`);
+  if (!res.ok) throw new Error('Failed to load tags');
+  const { data } = await res.json();
+  return data ?? [];
+}
+
+export async function confirmTag(tagId: number, amount: number) {
+  const res = await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/tags/${tagId}/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, localHour: new Date().getHours() }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to log wings');
+  }
+  const data = await res.json();
+  return { total_wings: data.total_wings, newBadges: data.newBadges ?? [] };
+}
+
+export async function declineTag(tagId: number) {
+  await fetchWithAuth(`${process.env.EXPO_PUBLIC_API_URL}/api/mobile/tags/${tagId}/decline`, { method: 'POST' });
 }

@@ -12,17 +12,17 @@ function wingVerb(amount) {
   }
 }
 
-export async function sendWingNotification({ loggerUserId, loggerName, amount }) {
+export async function sendWingNotification({ loggerUserId, loggerName, amount, excludeUserIds = [] }) {
   // Fetch all push tokens except the user who just logged
   const { data: users } = await supabase
     .from('users')
-    .select('push_token')
+    .select('id, push_token')
     .neq('id', loggerUserId)
     .not('push_token', 'is', null);
 
   if (!users?.length) return;
 
-  const tokens = users.map(u => u.push_token).filter(Boolean);
+  const tokens = users.filter(u => !excludeUserIds.includes(u.id)).map(u => u.push_token).filter(Boolean);
   if (!tokens.length) return;
 
   const messages = tokens.map(to => ({
@@ -33,6 +33,20 @@ export async function sendWingNotification({ loggerUserId, loggerName, amount })
     data: { type: 'wing_log' },
   }));
 
+  await sendPushMessages(messages);
+}
+
+export async function sendTagNotifications({ tags, taggerName, locationName }) {
+  await sendPushMessages(tags.filter(t => t.push_token).map(t => ({
+    to: t.push_token,
+    title: '🍗 You got tagged',
+    body: locationName ? `${taggerName} tagged you at ${locationName}. How many did you eat?` : `${taggerName} tagged you in a wing session. How many did you eat?`,
+    sound: 'default',
+    data: { type: 'wing_tag', tagId: t.id },
+  })));
+}
+
+async function sendPushMessages(messages) {
   // Send in batches of 100 (Expo limit)
   for (let i = 0; i < messages.length; i += 100) {
     const batch = messages.slice(i, i + 100);

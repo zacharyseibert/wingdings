@@ -1,12 +1,41 @@
 import { Router } from 'express';
-import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, getLongestStreak, getRecentActivity, getWingsOverTime, addWings, getUser } from '../db/wings.js';
-import { sendWingNotification } from '../push.js';
-import { checkAndAwardBadges, getUserBadges, getRecentBadgesForUsers } from '../db/badges.js';
+import { getLeaderboard, getGlobalStats, getBiggestSession, getMostActiveDay, getLongestStreak, getRecentActivity, getRecentActivityWithSessions, getWingsOverTime, addWings, getUser } from '../db/wings.js';
+import { sendWingNotification, sendTagNotifications } from '../push.js';
+import { checkAndAwardBadges, awardSessionBadges, getUserBadges, getRecentBadgesForUsers } from '../db/badges.js';
 import { supabase } from '../db/client.js';
 import { announceBadgesToSlack, announceWingsToSlack } from '../slack/announce.js';
 import { joinCompetition, leaveCompetition, getCompetition } from '../db/competitions.js';
 
+import { HWFFL_COMPETITION_ID, createTags, getPendingTags, claimTag, releaseTag, linkTagResponse, declineTag, getSessionParticipantIds } from '../db/tags.js';
+
 const router = Router();
+
+async function requireProfile(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const { data: { user } = {} } = token ? await supabase.auth.getUser(token) : {};
+  if (!user) { res.status(401).json({ error: 'Unauthorized' }); return null; }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('id, display_name, username, competition_id, birthday')
+    .eq('auth_id', user.id)
+    .single();
+  if (!profile) { res.status(404).json({ error: 'User profile not found' }); return null; }
+  return profile;
+}
+
+function isValidAmount(amount) {
+  return Number.isInteger(amount) && amount > 0 && amount <= 10000;
+}
+
+async function announceLog(profile, { amount, note, locationName, photoUrl, totalWings, newBadges, excludeUserIds }) {
+  const displayName = profile.display_name || profile.username;
+  if (profile.competition_id === HWFFL_COMPETITION_ID) {
+    announceWingsToSlack(displayName, amount, { note, locationName, photoUrl, totalWings }).catch(console.error);
+    if (newBadges.length > 0) announceBadgesToSlack(profile.id, displayName, newBadges).catch(console.error);
+  }
+  sendWingNotification({ loggerUserId: profile.id, loggerName: displayName, amount, excludeUserIds }).catch(console.error);
+}
 
 // GET /api/leaderboard?limit=10&competitionId=123
 router.get('/leaderboard', async (req, res) => {
@@ -53,10 +82,87 @@ router.get('/fun-stats', async (req, res) => {
 router.get('/recent', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 8, 20);
-    const data = await getRecentActivity(limit);
+    const data = req.query.sessions === '1' ? await getRecentActivityWithSessions(limit) : await getRecentActivity(limit);
     res.json({ data });
   } catch (err) {
     console.error('[api] recent error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/mobile/tags/pending — wing sessions the current user has been tagged in
+router.get('/mobile/tags/pending', async (req, res) => {
+  try {
+    const profile = await requireProfile(req, res);
+    if (!profile) return;
+    res.json({ data: await getPendingTags(profile.id) });
+  } catch (err) {
+    console.error('[api] tags/pending error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/tags/:id/confirm — log your own wings for a session you were tagged in
+router.post('/mobile/tags/:id/confirm', async (req, res) => {
+  try {
+    const profile = await requireProfile(req, res);
+    if (!profile) return;
+
+    const { amount, localHour } = req.body;
+    if (!isValidAmount(amount)) return res.status(400).json({ error: 'Invalid amount' });
+
+    const tag = await claimTag(req.params.id, profile.id);
+    if (!tag) return res.status(409).json({ error: 'This tag has expired or was already answered' });
+
+    const locationName = tag.entry?.location_name ?? null;
+    let responseEntryId;
+    try {
+      responseEntryId = await addWings(profile.id, amount, null, null, locationName, tag.entry?.latitude ?? null, tag.entry?.longitude ?? null, null);
+      await linkTagResponse(tag.id, responseEntryId);
+    } catch (err) {
+      await releaseTag(tag.id);
+      throw err;
+    }
+
+    const updated = await getUser(profile.id);
+    const logBadges = await checkAndAwardBadges(profile.id, {
+      amount,
+      totalWings: updated.total_wings,
+      photoUrl: null,
+      locationName,
+      note: null,
+      birthday: profile.birthday ?? null,
+      loggedAt: new Date().toISOString(),
+      localHour: typeof localHour === 'number' ? localHour : undefined,
+    });
+
+    const sessionAwards = await awardSessionBadges(await getSessionParticipantIds(tag.entry_id));
+    const newBadges = [...logBadges, ...(sessionAwards.find(a => a.userId === profile.id)?.badges ?? [])];
+
+    res.json({ total_wings: updated.total_wings, newBadges });
+
+    announceLog(profile, { amount, note: null, locationName, photoUrl: null, totalWings: updated.total_wings, newBadges, excludeUserIds: [] }).catch(console.error);
+
+    for (const award of sessionAwards.filter(a => a.userId !== profile.id)) {
+      getUser(award.userId)
+        .then(u => announceBadgesToSlack(award.userId, u.display_name || u.username, award.badges))
+        .catch(console.error);
+    }
+  } catch (err) {
+    console.error('[api] tags/confirm error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/mobile/tags/:id/decline — dismiss a tag without logging anything
+router.post('/mobile/tags/:id/decline', async (req, res) => {
+  try {
+    const profile = await requireProfile(req, res);
+    if (!profile) return;
+    await declineTag(req.params.id, profile.id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[api] tags/decline error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -91,12 +197,12 @@ router.post('/mobile/log', async (req, res) => {
 
     if (!profile) return res.status(404).json({ error: 'User profile not found' });
 
-    const { amount, photoUrl, locationName, note, localHour, latitude, longitude, rating } = req.body;
+    const { amount, photoUrl, locationName, note, localHour, latitude, longitude, rating, taggedUserIds } = req.body;
     if (!amount || typeof amount !== 'number' || amount <= 0 || amount > 10000) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null, latitude ?? null, longitude ?? null, rating ?? null);
+    const entryId = await addWings(profile.id, amount, note ?? null, photoUrl ?? null, locationName ?? null, latitude ?? null, longitude ?? null, rating ?? null);
     const updated = await getUser(profile.id);
 
     // Award badges (fast now with optimized queries)
@@ -113,25 +219,22 @@ router.post('/mobile/log', async (req, res) => {
 
     res.json({ total_wings: updated.total_wings, newBadges });
 
-    // Announce wings + badges to Slack for HWFFL competition members only
-    const displayName = profile.display_name || profile.username;
-    if (profile.competition_id === 1) {
-      announceWingsToSlack(displayName, amount, {
-        note: note ?? null,
-        locationName: locationName ?? null,
-        photoUrl: photoUrl ?? null,
-        totalWings: updated.total_wings,
-      }).catch(console.error);
+    const tagIds = Array.isArray(taggedUserIds) && profile.competition_id === HWFFL_COMPETITION_ID ? taggedUserIds : [];
+    const tags = tagIds.length
+      ? await createTags({ entryId, taggerId: profile.id, taggedUserIds: tagIds }).catch(err => { console.error('[api] createTags error:', err); return []; })
+      : [];
+    if (tags.length) {
+      sendTagNotifications({ tags, taggerName: profile.display_name || profile.username, locationName: locationName ?? null }).catch(console.error);
     }
 
-    if (newBadges.length > 0 && profile.competition_id === 1) {
-      announceBadgesToSlack(profile.id, displayName, newBadges).catch(console.error);
-    }
-
-    sendWingNotification({
-      loggerUserId: profile.id,
-      loggerName: profile.display_name || profile.username,
+    announceLog(profile, {
       amount,
+      note: note ?? null,
+      locationName: locationName ?? null,
+      photoUrl: photoUrl ?? null,
+      totalWings: updated.total_wings,
+      newBadges,
+      excludeUserIds: tags.map(t => t.tagged_id),
     }).catch(console.error);
   } catch (err) {
     console.error('[api] mobile/log error:', err);

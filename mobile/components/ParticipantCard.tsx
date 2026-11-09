@@ -38,6 +38,8 @@ const BADGE_DEFS: Record<string, { emoji: string; name: string; desc: string }> 
   mlk_day:      { emoji: '✊', name: 'MLK Day',       desc: 'Logged wings on MLK Jr. Day' },
   birthday:     { emoji: '🎂', name: 'Birthday Wings', desc: 'Logged wings on your birthday' },
   camera_shy:   { emoji: '🙈', name: 'Camera Shy',    desc: 'Logged wings 5 times without a photo' },
+  wing_buddy:   { emoji: '🤝', name: 'Wing Buddy',    desc: 'Shared a tagged wing session with someone' },
+  wing_squad:   { emoji: '👥', name: 'Wing Squad',    desc: 'Ate wings in a tagged session of 4 or more' },
   oops_my_bad:  { emoji: '🙇', name: 'Oops, My Bad',  desc: 'A badge you earned slipped through the cracks. Sorry!' },
 };
 

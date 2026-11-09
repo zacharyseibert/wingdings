@@ -58,7 +58,7 @@ export async function addWings(userId, amount, note = null, photoUrl = null, loc
     throw new RangeError(`You only have ${user.total_wings} wings — can't remove ${Math.abs(amount)}.`);
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('wing_entries')
     .insert({
       user_id: userId,
@@ -69,8 +69,11 @@ export async function addWings(userId, amount, note = null, photoUrl = null, loc
       ...(latitude != null ? { latitude } : {}),
       ...(longitude != null ? { longitude } : {}),
       ...(rating != null ? { rating } : {}),
-    });
+    })
+    .select('id')
+    .single();
   if (error) throw error;
+  return data.id;
 }
 
 /**
@@ -223,15 +226,78 @@ export async function getLongestStreak(competitionId = null) {
   return best.streak > 0 ? best : null;
 }
 
+const ACTIVITY_SELECT = 'id, amount, created_at, user_id, photo_url, location_name, note, rating, users(display_name, username, avatar_url)';
+
 export async function getRecentActivity(limit = 8) {
   const { data, error } = await supabase
     .from('wing_entries')
-    .select('id, amount, created_at, user_id, photo_url, location_name, note, rating, users(display_name, username, avatar_url)')
+    .select(ACTIVITY_SELECT)
     .gt('amount', 0)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
   return data;
+}
+
+// Recent activity with each tagged group merged into one item, placed at its newest log.
+export async function getRecentActivityWithSessions(limit = 8) {
+  const recent = await getRecentActivity(limit * 3);
+  const ids = recent.map(e => e.id).join(',');
+  if (!ids) return [];
+
+  const { data: seen, error: seenError } = await supabase
+    .from('wing_tags')
+    .select('entry_id')
+    .eq('status', 'confirmed')
+    .or(`entry_id.in.(${ids}),response_entry_id.in.(${ids})`);
+  if (seenError) throw seenError;
+
+  const hostIds = [...new Set(seen.map(t => t.entry_id))];
+  if (!hostIds.length) return recent.slice(0, limit);
+
+  const { data: tags, error: tagError } = await supabase
+    .from('wing_tags')
+    .select('entry_id, response_entry_id')
+    .eq('status', 'confirmed')
+    .in('entry_id', hostIds)
+    .not('response_entry_id', 'is', null);
+  if (tagError) throw tagError;
+
+  const { data: members, error: memberError } = await supabase
+    .from('wing_entries')
+    .select(ACTIVITY_SELECT)
+    .in('id', [...hostIds, ...tags.map(t => t.response_entry_id)]);
+  if (memberError) throw memberError;
+
+  const entryById = Object.fromEntries(members.map(e => [e.id, e]));
+  const hostByEntry = {};
+  const responsesByHost = {};
+  for (const t of tags) {
+    hostByEntry[t.response_entry_id] = t.entry_id;
+    hostByEntry[t.entry_id] = t.entry_id;
+    (responsesByHost[t.entry_id] ??= []).push(entryById[t.response_entry_id]);
+  }
+
+  const emitted = new Set();
+  const feed = [];
+  for (const entry of recent) {
+    const hostId = hostByEntry[entry.id];
+    if (hostId === undefined) { feed.push(entry); continue; }
+    if (emitted.has(hostId)) continue;
+    emitted.add(hostId);
+
+    const host = entryById[hostId];
+    const group = [host, ...responsesByHost[hostId].filter(Boolean)];
+    feed.push({
+      ...host,
+      created_at: entry.created_at,
+      session: {
+        total: group.reduce((sum, e) => sum + e.amount, 0),
+        participants: group.map(e => ({ name: e.users?.display_name || e.users?.username || 'Someone', amount: e.amount })),
+      },
+    });
+  }
+  return feed.slice(0, limit);
 }
 
 export async function getWingsOverTime() {
